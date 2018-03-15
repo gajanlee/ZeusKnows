@@ -134,13 +134,15 @@ class Word2Vec(object):
                 print(count, ":", cur_loss)
 
     def main(self):
-        self.vocab_reader(["preprocessed/trainset/zhidao.train.json"], end_line=30)
+        self.vocab_reader(["data/preprocessed/trainset/zhidao.train.json"], end_line=10000)
         self.vocab_saver()
+        print("save done")
         self.build_graph()
-        self.saver.restore(self.sess, "./model.ckpt-1")
-        for _ in range(10):
+        print("build")
+        #self.saver.restore(self.sess, "./model.ckpt-1")
+        for i in range(10):
             self.train()
-        self.saver.save(self.sess, "./model.ckpt", global_step=1)
+            self.saver.save(self.sess, "./model_check/model.ckpt", global_step=i)
 
 if __name__ == "__main__":
     with tf.Graph().as_default(), tf.Session() as sess:
