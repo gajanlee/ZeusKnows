@@ -11,12 +11,14 @@ def average():
 
 m_par = average(); next(m_par)
 m_ans = average(); next(m_ans)
+m_word = average(); next(m_word)
 
 class Word:
     def __init__(self, id, content):
         self.count = 1
         self.content = content
         self.id = id
+        self.length = len(content)
 
     def inc(self):
         self.count += 1
@@ -33,10 +35,18 @@ def vocab_reader(filepaths, start_line=0, end_line=None):
     for filepath in filepaths:
         with open(filepath) as f:
             for _ in range(start_line): next(f)
-            for i, l in enumerate(f):
+            for i, l in zip(tqdm(range(90366)), f):
                 if end_line is not None and i+start_line == end_line: break
                 tp = preprocess_word_list(json.loads(l))
     return tp
+
+import re
+def filter(word):
+    return True if re.findall(re.compile(r'[a-zA-Z0-9]'), word) else False
+    """for ch in list(word):
+        if ch.isalpha() or ch.isalnum():
+            return True
+    return False""" # bug, chinese characters are also 'alpha'
 
 def preprocess_word_list(data):
     # default value, some documents no answers
@@ -62,20 +72,26 @@ word_dict = {'<unknown>': Word(0, '<unknown>')}
 char_dict = {'<unknown>': 0}
 
 id ,char_id = 1, 1
+mean_word_len, max_word_len = 0, 0
+long_word_list = []
 def process(word):
-    global id, char_id
+    global id, char_id, mean_word_len, max_word_len
+    if len(word) > 8 or filter(word): return
+    for char in word:
+        if char not in char_dict:
+            char_dict[char] = char_id
+            char_id += 1
+
     if word not in word_dict:
         word_dict[word] = Word(id, word)
         id += 1
     else:
         word_dict[word].inc()
-    
 
-    for char in word:
-        if char not in char_dict:
-            char_dict[char] = char_id
-            char_id += 1
-    
+    max_word_len = len(word) if len(word) > max_word_len else max_word_len
+    #if len(word) > 8 and word not in long_word_list:
+    #    long_word_list.append(word)
+    mean_word_len = m_word.send(len(word))
 
 def statistics(max_paragraph, mean_paragraph, max_answer, mean_answer):
     with open("stat.log", "w") as f:
@@ -86,20 +102,23 @@ def statistics(max_paragraph, mean_paragraph, max_answer, mean_answer):
         mean answer length is {}
         vocabulary count is {}
         characterizer count is {}
-        """.format(max_paragraph, mean_paragraph, max_answer, mean_answer, len(word_dict), len(char_dict)))
+        max word length is {}
+        mean word length is {}
+        long word list is {}
+        """.format(max_paragraph, mean_paragraph, max_answer, mean_answer, len(word_dict), len(char_dict), max_word_len, mean_word_len, long_word_list))
 
 def main():
-    statistics(*vocab_reader(["/home/lee/workspace/DuReader/data/preprocessed/trainset/zhidao.train.json"], end_line=1000))
+    statistics(*vocab_reader(["../Dureader/data/preprocessed/trainset/zhidao.train.json"], end_line=None))
     with open("word.dict", "w") as f:
         for word in sort_dict(word_dict):
-            f.write("%s %s %s\n" % (word.id, word.content, word.count))
+            f.write("%s %s %s, %s\n" % (word.id, word.content, word.count, word.length))
     with open("char.dict", "w") as f:
         for char, id in char_dict.items():
             f.write("%s %s\n" % (char, id))
 
 def sort_dict(dict_words):
     """
-    字典排序
+   
     :param dict_words:
     :return:
     """
