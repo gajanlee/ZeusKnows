@@ -49,7 +49,7 @@ def load_common_words(word_path):
 
 def is_not_common(word):
     for ch in word:
-        if ch in common_words:
+        if (ch in common_words and ch.isalpha()) or (not word.isalpha()):  # isalpha means that char is a chinese characterizer.
             return False
     return True
 
@@ -136,7 +136,7 @@ def statistics(max_paragraph, mean_paragraph, max_answer, mean_answer):
         """.format(max_paragraph, mean_paragraph, max_answer, mean_answer, len(word_dict), len(char_dict), max_word_len, mean_word_len, long_word_list, total_count))
 
 def main():
-    load_common_words()
+    load_common_words("./word.txt")
     statistics(*vocab_reader(["../Dureader/data/preprocessed/trainset/zhidao.train.json"], end_line=None))
     with open("word.dict", "w") as f:
         for word in sort_dict(word_dict):
