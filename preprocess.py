@@ -74,9 +74,11 @@ char_dict = {'<unknown>': 0}
 id ,char_id = 1, 1
 mean_word_len, max_word_len = 0, 0
 long_word_list = []
+total_count = 0
 def process(word):
-    global id, char_id, mean_word_len, max_word_len
+    global id, char_id, mean_word_len, max_word_len, total_count
     if len(word) > 8 or filter(word): return
+    total_count += 1
     for char in word:
         if char not in char_dict:
             char_dict[char] = char_id
@@ -105,7 +107,8 @@ def statistics(max_paragraph, mean_paragraph, max_answer, mean_answer):
         max word length is {}
         mean word length is {}
         long word list is {}
-        """.format(max_paragraph, mean_paragraph, max_answer, mean_answer, len(word_dict), len(char_dict), max_word_len, mean_word_len, long_word_list))
+        total word count is {}
+        """.format(max_paragraph, mean_paragraph, max_answer, mean_answer, len(word_dict), len(char_dict), max_word_len, mean_word_len, long_word_list, total_count))
 
 def main():
     statistics(*vocab_reader(["../Dureader/data/preprocessed/trainset/zhidao.train.json"], end_line=None))
