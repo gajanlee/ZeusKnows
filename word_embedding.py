@@ -1,34 +1,76 @@
 #!/usr/bin/python3
 import tensorflow as tf
 import numpy as np
-import json
+import json, math
 from collections import Counter
-import math
 '''
 This python file implementes the word embedding model.
 We use the skip-gram, infer context words from one input word.
 '''
 
 
+import logging
+logging.basicConfig(level=logging.DEBUG,
+                datefmt='%a, %d %b %Y %H:%M:%S')
+logger = logging.getLogger(__name__)
+
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--vocabulary", default="../DuReader/data/processed/trainset/zhidao.train.json", type=str)
+parser.add_argument("--endline", default=None)
+args = parser.parse_args()
+
+
+
 class Word2Vec(object):
     """Word2Vec model (Skip-gram)."""
-    
     def __init__(self, sess):
         self.word_list = []
         self._id_to_vocab = {}
         self._vocab_to_id = {}
 
-        self.window_size = 2
+        #self.window_size = 2
         self.batch_size = 300
         self.num_sampled = 100
         self.vocab_size = None
         self.emb_dim = 300
-
+        self.window_size = 4
         self.sess = sess
+
+        self.vocab_dict = {}
+        
+        self.rd = self.reader()
+
+    def reader(self):
+        with open(args.passages) as fp:
+            for line in fp:
+                yield from self.target_window([int(x) for x in line.split(' ')])
+
+    def target_window(self, id_list):
+        targets = []    # a list of (inputs, label)
+        for idx, label in enumerate(id_list):
+            target_window_size = np.random.randint(1, self.window_size + 1)
+            # 这里要考虑input word前面单词不够的情况
+            start_point = idx - target_window_size if (idx - target_window_size) > 0 else 0
+            end_point = idx + target_window_size
+            for input in set(id_list[start_point: idx] + id_list[idx+1: end_point+1]):
+                targets.append((input, label))
+        return targets
+
+    def get_batch(self):
+        inputs, labels = [], []
+        for _ in range(self.batch_size):
+            try:
+                input, label = next(self.rd)
+                inputs.append(input), labels.append(label)
+            except StopIteration:
+                return None, None
+        return inputs, labels
+            
 
 
     # Generate a token dictionary.
-    def preprocess_word_list(self, data_dict):
+    """def preprocess_word_list(self, data_dict):
         for doc in data_dict["documents"]:
             for para in doc["segmented_paragraphs"]:
                 for word in para:
@@ -87,6 +129,12 @@ class Word2Vec(object):
             return inputs, labels
         return batch
 
+    def get_batch(self):
+        with open() as fp:
+            pass"""
+
+
+
     def build_graph(self):
         
         self.train_inputs = tf.placeholder(tf.int32, shape=[self.batch_size])
@@ -121,108 +169,47 @@ class Word2Vec(object):
         analogy_b = tf.placeholder(dtype=tf.int32)
         analogy_c = tf.placeholder(dtype=tf.int32)
         pass
+    
+    def restore(self):
+        self.saver.restore(self.sess, "./model.ckpt-1")
 
-    def train(self):
-        batch, count = self.next_batch(), 0
+    def train(self, epoch):
+        count = 0
         while True:
-            inputs, labels = batch()
+            inputs, labels = self.get_batch()
             if inputs is None: break
             _, cur_loss, merge = self.sess.run([self.trainer, self.loss, self.merge_sumarry_op], feed_dict={self.train_inputs: inputs, self.train_labels: labels})
             count += 1
-            if count % 100 == 0:
+            if count % 1000 == 0:
                 self.summary_writer.add_summary(merge, count)
-                print(count, ":", cur_loss)
+                logger("batch: %s, loss: %s" % (count, cur_loss))
+        self.saver.save(self.sess, "./model_check/embedding.ckpt", global_step=epoch)
 
-    def main(self):
-        self.vocab_reader(["data/preprocessed/trainset/zhidao.train.json"], end_line=10000)
-        self.vocab_saver()
-        print("save done")
-        self.build_graph()
-        print("build")
+def load_vocab_dict():
+    vocab_dict = {}
+    with open(args.vocabulary) as fp:
+        for line in fp:
+            res = line.split(' ')
+            vocab_dict[res[1]] = res[res[0]]   # content: id
+    return vocab_dict
+
+def main():
+    #self.vocab_reader(["data/preprocessed/trainset/zhidao.train.json"], end_line=10000)
+    #self.vocab_saver()
+    #print("save done")
+    with tf.Graph().as_default(), tf.Session() as sess:
         #self.saver.restore(self.sess, "./model.ckpt-1")
-        for i in range(10):
-            self.train()
-            self.saver.save(self.sess, "./model_check/model.ckpt", global_step=i)
+        
+        model = Word2Vec(sess)
+        logger.info("loading vocab")
+        model.vocab_dict = load_vocab_dict()
+        logger.info("loading vocab done, vocab_size is %s" % len(model.vocab_dict))
+        model.build_graph()
+        logger.info("build graph done")
+        for i in range(args.epoch):
+            logger.info("%s epoch starts..." % i)
+            model.train(i)
 
 if __name__ == "__main__":
-    with tf.Graph().as_default(), tf.Session() as sess:
-        Word2Vec(sess).main()
+    main()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def sample():
-    t = 1e-5
-    threshold = 0.8
-    int_word_counts = Counter(word_list)
-    total_count = len(word_list)
-    prob_drop = {w: 1 - np.sqrt(t / (c / total_count)) for w, c in int_word_counts.items()}
-    train_words = [w for w in int_word_counts if prob_drop[w] < threshold]
-
-def get_targets(words, idx, window_size=5):
-    target_window = np.random.randint(1, window_size+1)
-    start_point = idx - target_window if (idx - target_window) > 0 else 0
-    end_point = idx + target_window
-    # output words(即窗口中的上下文单词)
-    targets = set(words[start_point: idx] + words[idx+1: end_point+1])
-    return list(targets)
-
-def get_batches(words, batch_size, window_size=5):
-    # add <s> and </s>
-    # add <unknown>
-    n_batches = len(words) 
-    
-    # 仅取full batches
-    words = words[:n_batches*batch_size]
-    
-    for idx in range(0, len(words), batch_size):
-        x, y = [], []
-        batch = words[idx: idx+batch_size]
-        for i in range(len(batch)):
-            batch_x = batch[i]
-            batch_y = get_targets(batch, i, window_size)
-            # 由于一个input word会对应多个output word，因此需要长度统一
-            x.extend([batch_x]*len(batch_y))
-            y.extend(batch_y)
-        yield x, y
-
-def model():
-    vocab_size = len(int_to_vocab)
-    embedding_size = 200
-    window_size = 8
-    n_sampled = 100
-    
-    train_graph = tf.Graph()
-    with tf.name_scope("input"):
-        inputs = tf.placeholder(tf.float32, [None, window_size], name="inputs")
-        labels = tf.placeholder(tf.int32, [None, None], name="labels")
-
-        embedding = tf.Variable(tf.random_uniform([vocab_size, embedding_size], -1, -1))
-        embed = tf.nn.embedding_lookup(embedding, inputs)
-        
-        softmax_w = tf.Variable(tf.truncated_normal([vocab_size, embedding_size], stddev=0.1))
-        softmax_b = tf.Variable(tf.zeros(vocab_size))
-        
-        loss = tf.nn.sampled_softmax_loss(softmax_w, softmax_b, labels, embed, n_sampled, vocab_size)
-        cost = tf.reduce_mean(loss)
-        optimizer = tf.train.AdamOptimizer().minmize(cost)
