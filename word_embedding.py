@@ -46,28 +46,29 @@ class Word2Vec(object):
             for line in fp:
                 yield from self.target_window([int(x) for x in line.split(' ')])
 
+    # id 0 is <unknown>
     def target_window(self, id_list):
         targets = []    # a list of (inputs, label)
         for idx, label in enumerate(id_list):
+            if label == 0: continue
             target_window_size = np.random.randint(1, self.window_size + 1)
             # 这里要考虑input word前面单词不够的情况
             start_point = idx - target_window_size if (idx - target_window_size) > 0 else 0
             end_point = idx + target_window_size
             for input in set(id_list[start_point: idx] + id_list[idx+1: end_point+1]):
-                targets.append((input, label))
+                if input != 0: targets.append((input, label))
         return targets
 
     def get_batch(self):
         inputs, labels = [], []
-        for _ in range(self.batch_size):
+        while len(inputs) != self.batch_size:
             try:
                 input, label = next(self.rd)
                 inputs.append(input), labels.append(label)
             except StopIteration:
                 return None, None
         return inputs, labels
-            
-
+        
 
     # Generate a token dictionary.
     """def preprocess_word_list(self, data_dict):
