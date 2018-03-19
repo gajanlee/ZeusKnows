@@ -16,8 +16,11 @@ logger = logging.getLogger(__name__)
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("--vocabulary", default="../DuReader/data/processed/trainset/zhidao.train.json", type=str)
+#parser.add_argument("--vocabulary", default="../DuReader/data/processed/trainset/zhidao.train.json", type=str)
 parser.add_argument("--endline", default=None)
+parser.add_argument("--vocabulary", default="./word.dict", type=str)
+parser.add_argument("--epoch", default="1", type=int)
+parser.add_argument("--passages", default="./word_list.dict")
 args = parser.parse_args()
 
 
@@ -43,31 +46,35 @@ class Word2Vec(object):
 
     def reader(self):
         with open(args.passages) as fp:
-            for line in fp:
-                yield from self.target_window([int(x) for x in line.split(' ')])
-
+            for i, line in enumerate(fp):
+                try:
+                    yield from self.target_window([int(x) for x in line.split(' ')])
+                except:
+                    pass
+                print(str(i) + " line")
+    # id 0 is <unknown>
     def target_window(self, id_list):
         targets = []    # a list of (inputs, label)
         for idx, label in enumerate(id_list):
+            if label == 0: continue
             target_window_size = np.random.randint(1, self.window_size + 1)
             # 这里要考虑input word前面单词不够的情况
             start_point = idx - target_window_size if (idx - target_window_size) > 0 else 0
             end_point = idx + target_window_size
             for input in set(id_list[start_point: idx] + id_list[idx+1: end_point+1]):
-                targets.append((input, label))
+                if input != 0: targets.append((input, label))
         return targets
 
     def get_batch(self):
         inputs, labels = [], []
-        for _ in range(self.batch_size):
+        while len(inputs) != self.batch_size:
             try:
                 input, label = next(self.rd)
-                inputs.append(input), labels.append(label)
+                inputs.append(input), labels.append([label])
             except StopIteration:
                 return None, None
         return inputs, labels
-            
-
+        
 
     # Generate a token dictionary.
     """def preprocess_word_list(self, data_dict):
@@ -136,7 +143,8 @@ class Word2Vec(object):
 
 
     def build_graph(self):
-        
+        self.vocab_size = len(self.vocab_dict)
+
         self.train_inputs = tf.placeholder(tf.int32, shape=[self.batch_size])
         self.train_labels = tf.placeholder(tf.int32, shape=[self.batch_size, 1])
 
@@ -182,7 +190,7 @@ class Word2Vec(object):
             count += 1
             if count % 1000 == 0:
                 self.summary_writer.add_summary(merge, count)
-                logger("batch: %s, loss: %s" % (count, cur_loss))
+                print("batch: %s, loss: %s" % (count, cur_loss))
         self.saver.save(self.sess, "./model_check/embedding.ckpt", global_step=epoch)
 
 def load_vocab_dict():
@@ -190,7 +198,7 @@ def load_vocab_dict():
     with open(args.vocabulary) as fp:
         for line in fp:
             res = line.split(' ')
-            vocab_dict[res[1]] = res[res[0]]   # content: id
+            vocab_dict[res[1]] = res[0]   # content: id
     return vocab_dict
 
 def main():
@@ -210,6 +218,16 @@ def main():
             logger.info("%s epoch starts..." % i)
             model.train(i)
 
+def main_test():
+    model = Word2Vec(None)
+    count = 0
+    while True:
+        inputs, labels = model.get_batch()
+        count += 1
+        if count % 1000 == 0:
+            print(count)
+        if inputs is None:
+            break
 if __name__ == "__main__":
-    main()
+    main_test()
 
