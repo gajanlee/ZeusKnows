@@ -46,12 +46,12 @@ class Word2Vec(object):
 
     def reader(self):
         with open(args.passages) as fp:
-            for i, line in enumerate(fp):
+            for line in fp:
                 try:
                     yield from self.target_window([int(x) for x in line.split(' ')])
                 except:
                     pass
-                print(str(i) + " line")
+
     # id 0 is <unknown>
     def target_window(self, id_list):
         targets = []    # a list of (inputs, label)
