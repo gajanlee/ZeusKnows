@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser()
 #parser.add_argument("--vocabulary", default="../DuReader/data/processed/trainset/zhidao.train.json", type=str)
 parser.add_argument("--endline", default=None)
 parser.add_argument("--vocabulary", default="./word.dict", type=str)
-parser.add_argument("--epoch", default="1", type=int)
+parser.add_argument("--epoch", default="2", type=int)
 parser.add_argument("--passages", default="./word_list.dict")
 args = parser.parse_args()
 
@@ -33,7 +33,7 @@ class Word2Vec(object):
         self._vocab_to_id = {}
 
         #self.window_size = 2
-        self.batch_size = 300
+        self.batch_size = 3000
         self.num_sampled = 100
         self.vocab_size = None
         self.emb_dim = 300
@@ -51,7 +51,6 @@ class Word2Vec(object):
                     yield from self.target_window([int(x) for x in line.split(' ')])
                 except:
                     pass
-
     # id 0 is <unknown>
     def target_window(self, id_list):
         targets = []    # a list of (inputs, label)
@@ -183,6 +182,7 @@ class Word2Vec(object):
 
     def train(self, epoch):
         count = 0
+        self.rd = self.reader()
         while True:
             inputs, labels = self.get_batch()
             if inputs is None: break
@@ -190,7 +190,7 @@ class Word2Vec(object):
             count += 1
             if count % 1000 == 0:
                 self.summary_writer.add_summary(merge, count)
-                print("batch: %s, loss: %s" % (count, cur_loss))
+                logger.info("batch: %s, loss: %s" % (count, cur_loss))
         self.saver.save(self.sess, "./model_check/embedding.ckpt", global_step=epoch)
 
 def load_vocab_dict():
@@ -206,7 +206,6 @@ def main():
     #self.vocab_saver()
     #print("save done")
     with tf.Graph().as_default(), tf.Session() as sess:
-        #self.saver.restore(self.sess, "./model.ckpt-1")
         
         model = Word2Vec(sess)
         logger.info("loading vocab")
@@ -214,20 +213,12 @@ def main():
         logger.info("loading vocab done, vocab_size is %s" % len(model.vocab_dict))
         model.build_graph()
         logger.info("build graph done")
+        model.saver.restore(sess, "./model_check/embedding.ckpt-0")
+        logger.info("load chekpoint done")
         for i in range(args.epoch):
             logger.info("%s epoch starts..." % i)
-            model.train(i)
+            model.train(i + 1)
 
-def main_test():
-    model = Word2Vec(None)
-    count = 0
-    while True:
-        inputs, labels = model.get_batch()
-        count += 1
-        if count % 1000 == 0:
-            print(count)
-        if inputs is None:
-            break
 if __name__ == "__main__":
-    main_test()
+    main()
 
