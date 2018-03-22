@@ -1,8 +1,9 @@
+
 class Params:
     
     # ------> Preprocessed Parameters
     train_files = ["/home/lijz/Dureader/data/preprocessed/trainset/zhidao.train.json"]
-    endline = None
+    endline = None #100
 
     # ------> Vocabulary Parameters
     wordlst_path = "word_list.dict"   # save words' list

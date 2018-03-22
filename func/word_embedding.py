@@ -2,6 +2,7 @@ from __init__ import *
 import tensorflow as tf
 import numpy as np
 import math
+from params import Params
 
 
 class Word2Vec(object):
@@ -19,7 +20,8 @@ class Word2Vec(object):
     def reader(self):
         with open("_id" + Params.wordlst_path) as fp:
             for line in fp:
-                yield from self.target_window([int(x) for x in line.split(' ')])
+                try: yield from self.target_window([int(x) for x in line.split(' ')])
+                except: print(line)
 
     def target_window(self, id_list):
         targets = []
@@ -44,6 +46,7 @@ class Word2Vec(object):
     def build_graph(self):
         # dict contains some space like char.
         self.vocab_size = len(vocabulary.vocab_dict)
+        self.vocab_size = 144836
         logger.info("BUILD GRAPH: VOCABULARY SIZE IS %s" % len(vocabulary.vocab_dict))
 
         self.train_inputs = tf.placeholder(tf.int32, shape=[self.batch_size])
@@ -98,12 +101,11 @@ class Word2Vec(object):
 def main():
     with tf.Graph().as_default(), tf.Session() as sess:
         model = Word2Vec(sess)
-        logger.info("loading vocab done, vocab_size is %s" % len(model.vocab_dict))
         model.build_graph()
         logger.info("build graph done")
         # model.saver.restore(sess, "./model_check/embedding.ckpt-0")
         logger.info("load chekpoint done")
-        for i in range(args.epoch):
+        for i in range(Params.epoch):
             logger.info("%s epoch starts..." % i)
             model.train(i + 1)
 

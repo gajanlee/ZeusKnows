@@ -4,7 +4,14 @@ from params import Params
 import logging
 
 logger = logging.getLogger("vocab_logger")
-logging.basicConfig(level = logging.DEBUG)
+logging.basicConfig(level = logging.DEBUG, 
+                    format = "%(asctime)s : %(levelname)s  %(message)s",
+                    datefmt = "%Y-%m-%d %A %H:%M:%S")
+
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--endline")
+args = parser.parse_args()
 
 class Vocabulary:
     def __init__(self):
@@ -12,7 +19,7 @@ class Vocabulary:
         self.vocab_ids = self.char_ids = 1
         #self.load_char_dict()
         if os.path.exists(Params.vocab_path): self.load_vocab_dict()
-        if os.path.exists(Params.char_dict): self.load_char_dict()
+        if os.path.exists(Params.char_path): self.load_char_dict()
 
     def process_word_list(self, lst):
         self.wordlst.append(lst)
@@ -44,7 +51,8 @@ class Vocabulary:
         with open(Params.char_path) as fp:
             for line in fp:
                 res = line.split(" ")
-                self.char_dict[res[0]] = res[1]
+                try: self.char_dict[res[0]] = int(res[1])
+                except: pass
         logger.info("Char dictionary loaded DONE! SUM %s ." % len(self.char_dict))
 
     # Get A Char's ID
@@ -54,18 +62,26 @@ class Vocabulary:
     # Format as same as char dict.
     def load_vocab_dict(self):
         with open(Params.vocab_path) as fp:
-            for line in fp:
+            for i, line in enumerate(fp):
                 res = line.split(" ")
-                self.vocab_dict[res[0]] = res[1]
-        logger.info("Char dictionary loaded DONE! SUM %s ." % len(self.vocab_dict))        
+                try:self.vocab_dict[res[0]] = int(res[1])
+                except: pass
+        logger.info("Vocabulary dictionary loaded DONE! SUM %s ." % len(self.vocab_dict))        
 
     def getVocabID(self, word):
         return self.vocab_dict.get(word, 0)
 
     def purify_sorted(self, data_dict):
-        return sorted(list(filter(lambda x: x[1][1] >= Params.threshold, data_dict.items())), key=lambda x: x[1][1])
-
+        sort_list = sorted(list(filter(lambda x: x[1][1] >= Params.count_threshold, data_dict.items())), key=lambda x: x[1][1])
+        res_list = []; data_dict.clear()
+        for id, ele in enumerate(sort_list):
+            res_list.append([ele[0], [id, ele[1][1]] ])
+            data_dict[ele[0]] = id
+        return res_list
+    
     def save(self):
+        vocab_lst = self.purify_sorted(self.vocab_dict)
+        char_lst  = self.purify_sorted(self.char_dict)
         # write and close
         fp1, fp2 = open(Params.wordlst_path, "w"), open("_id"+Params.wordlst_path, "w")
         for words in self.wordlst:
@@ -73,17 +89,14 @@ class Vocabulary:
             fp2.write("%s\n" % " ".join([str(self.getVocabID(vocab)) for vocab in words]))
         fp1.close(); fp2.close()
 
-        vocab_lst = self.purify_sorted(self.vocab_dict)
-        char_lst  = self.purify_sorted(self.char_dict)
-
         #vocab_lst = sorted(self.vocab_dict.items(), key=lambda x: x[1][1])
         #char_lst = sorted(self.char_dict.items(), key=lambda x: x[1][1])
         with open(Params.vocab_path, "w") as fp:
             for st in vocab_lst:
-                fp.write("%s %s %s\n" % (st[0], st[1][0], st[1][1]))
+                fp.write("%s %d %d,\n" % (st[0], st[1][0], st[1][1]))
         with open(Params.char_path, "w") as fp:
             for st in char_lst:
-                fp.write("%s %s %s\n" % (st[0], st[1][0], st[1][1]))
+                fp.write("%s %d %d,\n" % (st[0], st[1][0], st[1][1]))
         
 
 vocabulary = Vocabulary()
