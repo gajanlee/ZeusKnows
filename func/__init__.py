@@ -1,4 +1,4 @@
-import re
+import re, os
 import json
 from params import Params
 import logging
@@ -6,28 +6,13 @@ import logging
 logger = logging.getLogger("vocab_logger")
 logging.basicConfig(level = logging.DEBUG)
 
-class Word:
-    def __init__(self, id, content):
-        self.count = 1
-        self.content = content
-        self.id = id
-        self.length = len(content)
-
-    def inc(self):
-        self.count += 1
-
-    def __str__(self):
-        return "<Word id=%s content=%s count=%s>" % (self.id, self.content, self.count)
-    
-    def __repr__(self):
-        return "<Word id=%s content=%s count=%s>" % (self.id, self.content, self.count)
-
-
 class Vocabulary:
     def __init__(self):
-        self.vocab_dict, self.char_dict, self.wordlst = {"unknown": [0, 0]}, {"<unknown>": [0, 0]}, []
+        self.vocab_dict, self.char_dict, self.wordlst = {"unknown": [0, Params.count_threshold]}, {"<unknown>": [0, Params.count_threshold]}, []
         self.vocab_ids = self.char_ids = 1
         #self.load_char_dict()
+        if os.path.exists(Params.vocab_path): self.load_vocab_dict()
+        if os.path.exists(Params.char_dict): self.load_char_dict()
 
     def process_word_list(self, lst):
         self.wordlst.append(lst)
@@ -44,6 +29,8 @@ class Vocabulary:
     def unfilter(self, word):
         return False if len(word) > 5 or re.findall(re.compile(r'[a-zA-Z0-9]'), word) or self.notcommon(word) else True
 
+    # judge if the char is common.open
+    # Update: We choose characters by displayed count.
     def notcommon(self, word):
         return False
         for char in word:
@@ -52,14 +39,31 @@ class Vocabulary:
                 return True
         return False
 
+    # Load Char Dict As Writer Formate: content, id, count
     def load_char_dict(self):
-        with open(Params.char_dict_path) as fp:
-            for id, line in enumerate(fp, 1):
-                self.char_dict[line[0]] = id
+        with open(Params.char_path) as fp:
+            for line in fp:
+                res = line.split(" ")
+                self.char_dict[res[0]] = res[1]
         logger.info("Char dictionary loaded DONE! SUM %s ." % len(self.char_dict))
-    
+
+    # Get A Char's ID
+    def getCharID(self, char):
+        return self.char_dict.get(char, 0)
+
+    # Format as same as char dict.
+    def load_vocab_dict(self):
+        with open(Params.vocab_path) as fp:
+            for line in fp:
+                res = line.split(" ")
+                self.vocab_dict[res[0]] = res[1]
+        logger.info("Char dictionary loaded DONE! SUM %s ." % len(self.vocab_dict))        
+
     def getVocabID(self, word):
         return self.vocab_dict.get(word, 0)
+
+    def purify_sorted(self, data_dict):
+        return sorted(list(filter(lambda x: x[1][1] >= Params.threshold, data_dict.items())), key=lambda x: x[1][1])
 
     def save(self):
         # write and close
@@ -69,11 +73,11 @@ class Vocabulary:
             fp2.write("%s\n" % " ".join([str(self.getVocabID(vocab)) for vocab in words]))
         fp1.close(); fp2.close()
 
-        
-        vocab_lst = sorted(self.vocab_dict.items(), key=lambda x: x[1][1])
-        char_lst = sorted(self.char_dict.items(), key=lambda x: x[1][1])
-        print(self.char_dict["五"])
-        print(self.char_dict["花"])
+        vocab_lst = self.purify_sorted(self.vocab_dict)
+        char_lst  = self.purify_sorted(self.char_dict)
+
+        #vocab_lst = sorted(self.vocab_dict.items(), key=lambda x: x[1][1])
+        #char_lst = sorted(self.char_dict.items(), key=lambda x: x[1][1])
         with open(Params.vocab_path, "w") as fp:
             for st in vocab_lst:
                 fp.write("%s %s %s\n" % (st[0], st[1][0], st[1][1]))
