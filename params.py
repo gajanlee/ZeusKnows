@@ -2,7 +2,9 @@
 class Params:
     
     # ------> Preprocessed Parameters
-    train_files = ["/home/lijz/Dureader/data/preprocessed/trainset/zhidao.train.json"]
+    data_files_format = "../Dureader/data/preprocessed/{mode}set/zhidao.{mode}.json"
+    train_files = ["../Dureader/data/preprocessed/trainset/zhidao.train.json"]
+
     endline = None #100
 
     # ------> Vocabulary Parameters
@@ -13,5 +15,11 @@ class Params:
 
     # -----> Word Embedding Parameters
     epoch = 15
+    vocabulary_size = 144836
+    vocabulary_embedding = 386
+    char_dict_size = 8136
+
+    # -----> Generate Question-Answer Data Format Configuration
+
 
     

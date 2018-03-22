@@ -13,3 +13,5 @@ batch count is 2158000
 
 char dict size 8136
 vocab dict size 144836
+threshold 11
+single word max length is 5
