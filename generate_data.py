@@ -37,9 +37,10 @@ class Writer:
             if self.mode == "test":
                 pass
             elif self.mode in ["train", "dev"]:
-                [self.train_process(json.loads(line)) for line in fp]
+                [self.train_process(json.loads(line), i) for i, line in enumerate(fp)]
     
-    def train_process(self, data_json):
+    def train_process(self, data_json, i):
+        if i % 1000 == 0: logger.info(self.mode.upper() + " %s LINE..." % i)
         if not data_json["match_scores"]: return
         answer_spans = data_json["answer_spans"][0] # Actually it only ones
         doc = data_json["documents"][data_json["answer_docs"][0]]
@@ -52,7 +53,7 @@ class Writer:
             "answer_spans": data_json["answer_spans"],}
 
         base_format["segmented_paragraph"] = doc["segmented_paragraphs"][doc["most_related_para"]]
-        base_format["segmented_answer"] = base_format["segmented_paragraph"][answer_spans[0][0]:answer_spans[0][1]]
+        base_format["segmented_answer"] = base_format["segmented_paragraph"][answer_spans[0]:answer_spans[1]]
         base_format["segmented_question"] = data_json["segmented_question"]
         base_format["char_paragraph"] = [vocabulary.getCharID(word) for word in base_format["segmented_paragraph"]]
         base_format["char_question"] = [vocabulary.getCharID(word) for word in base_format["segmented_question"]]
@@ -63,10 +64,13 @@ class Writer:
         self.write_id(base_format)
         
     def __enter__(self):
-        pass
+        return self
     def __exit__(self, *exc_info):
         self.close()
 
 if __name__ == "__main__":
-    with Writer("train") as w:
-        w.preprocess()
+    with Writer("train") as wt, Writer("dev") as wd:
+        logger.info("Start process trainset...")
+        wt.preprocess()
+        logger.info("Start process devset...")
+        wd.preprocess()
