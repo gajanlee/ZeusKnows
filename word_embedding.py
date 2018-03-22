@@ -1,66 +1,36 @@
-#!/usr/bin/python3
+from __init__ import *
 import tensorflow as tf
 import numpy as np
-import json, math
-from collections import Counter
-'''
-This python file implementes the word embedding model.
-We use the skip-gram, infer context words from one input word.
-'''
-
-
-import logging
-logging.basicConfig(level=logging.DEBUG,
-                datefmt='%a, %d %b %Y %H:%M:%S')
-logger = logging.getLogger(__name__)
-
-import argparse
-parser = argparse.ArgumentParser()
-#parser.add_argument("--vocabulary", default="../DuReader/data/processed/trainset/zhidao.train.json", type=str)
-parser.add_argument("--endline", default=None)
-parser.add_argument("--vocabulary", default="./word.dict", type=str)
-parser.add_argument("--epoch", default="2", type=int)
-parser.add_argument("--passages", default="./word_list.dict")
-args = parser.parse_args()
-
+import math
+from params import Params
 
 
 class Word2Vec(object):
     """Word2Vec model (Skip-gram)."""
     def __init__(self, sess):
-        self.word_list = []
-        self._id_to_vocab = {}
-        self._vocab_to_id = {}
-
-        #self.window_size = 2
         self.batch_size = 3000
         self.num_sampled = 100
         self.vocab_size = None
         self.emb_dim = 300
         self.window_size = 4
         self.sess = sess
-
-        self.vocab_dict = {}
         
         self.rd = self.reader()
 
     def reader(self):
-        with open(args.passages) as fp:
+        with open("_id" + Params.wordlst_path) as fp:
             for line in fp:
-                try:
-                    yield from self.target_window([int(x) for x in line.split(' ')])
-                except:
-                    pass
-    # id 0 is <unknown>
+                try: yield from self.target_window([int(x) for x in line.split(' ')])
+                except: print(line)
+
     def target_window(self, id_list):
-        targets = []    # a list of (inputs, label)
+        targets = []
         for idx, label in enumerate(id_list):
-            if label == 0: continue
+            if label == 0: continue # delete unknown label and input(later)
             target_window_size = np.random.randint(1, self.window_size + 1)
             # 这里要考虑input word前面单词不够的情况
             start_point = idx - target_window_size if (idx - target_window_size) > 0 else 0
-            end_point = idx + target_window_size
-            for input in set(id_list[start_point: idx] + id_list[idx+1: end_point+1]):
+            for input in set(id_list[start_point: idx] + id_list[idx+1: idx+target_window_size +1]):
                 if input != 0: targets.append((input, label))
         return targets
 
@@ -70,79 +40,14 @@ class Word2Vec(object):
             try:
                 input, label = next(self.rd)
                 inputs.append(input), labels.append([label])
-            except StopIteration:
-                return None, None
+            except StopIteration: return None, None
         return inputs, labels
-        
-
-    # Generate a token dictionary.
-    """def preprocess_word_list(self, data_dict):
-        for doc in data_dict["documents"]:
-            for para in doc["segmented_paragraphs"]:
-                for word in para:
-                    self.word_list.append(word)
-    
-    def vocab_reader(self, filepaths, start_line=0, end_line=None):
-        for filepath in filepaths:
-            with open(filepath) as f:
-                for _ in range(start_line): next(f)
-                for i, l in enumerate(f):
-                    if end_line is not None and i+start_line == end_line: break
-                    self.preprocess_word_list(json.loads(l))
-        self.arrange()
-    
-    def arrange(self):
-        vocab = set(self.word_list)
-        vocab.add("<unknown>")
-        self._vocab_to_id = {w: c for c, w in enumerate(vocab)}
-        self._id_to_vocab = {c: w for c, w in enumerate(vocab)}
-        self.vocab_size = len(vocab)
-
-    def vocab_to_id(self, word):
-        word = word if word in self._vocab_to_id else "<unknown>"
-        return self._vocab_to_id[word]
-    
-    def vocab_saver(self, filepath="vocab.dict"):
-        with open(filepath, "w") as f:
-            for word, id in self._vocab_to_id.items():
-                f.write("{word} {id}\n".format(word=word, id=id))
-
-    def get_context(self, idx):
-        target_window = np.random.randint(1, self.window_size + 1)
-        # 这里要考虑input word前面单词不够的情况
-        start_point = idx - target_window if (idx - target_window) > 0 else 0
-        end_point = idx + target_window
-        targets = set(self.word_list[start_point: idx] + self.word_list[idx+1: end_point+1])  # xiaochu chongfu
-        return list(targets)
-
-    def generate_batch(self):
-        for idx in range(len(self.word_list)):
-            for word in self.get_context(idx):
-                yield self.vocab_to_id(self.word_list[idx]), self.vocab_to_id(word)
-    
-    def next_batch(self):
-        g_batch = self.generate_batch()
-
-        def batch():
-            inputs, labels = [], []
-            for _ in range(self.batch_size):
-                try:
-                    ip, lb = next(g_batch)
-                    # raise StopIteration. and return None
-                    inputs.append(ip); labels.append([lb])
-                except StopIteration:
-                    return None, None
-            return inputs, labels
-        return batch
-
-    def get_batch(self):
-        with open() as fp:
-            pass"""
-
-
 
     def build_graph(self):
-        self.vocab_size = len(self.vocab_dict)
+        # dict contains some space like char.
+        self.vocab_size = len(vocabulary.vocab_dict)
+        self.vocab_size = 144836
+        logger.info("BUILD GRAPH: VOCABULARY SIZE IS %s" % len(vocabulary.vocab_dict))
 
         self.train_inputs = tf.placeholder(tf.int32, shape=[self.batch_size])
         self.train_labels = tf.placeholder(tf.int32, shape=[self.batch_size, 1])
@@ -182,7 +87,6 @@ class Word2Vec(object):
 
     def train(self, epoch):
         count = 0
-        self.rd = self.reader()
         while True:
             inputs, labels = self.get_batch()
             if inputs is None: break
@@ -193,32 +97,17 @@ class Word2Vec(object):
                 logger.info("batch: %s, loss: %s" % (count, cur_loss))
         self.saver.save(self.sess, "./model_check/embedding.ckpt", global_step=epoch)
 
-def load_vocab_dict():
-    vocab_dict = {}
-    with open(args.vocabulary) as fp:
-        for line in fp:
-            res = line.split(' ')
-            vocab_dict[res[1]] = res[0]   # content: id
-    return vocab_dict
 
 def main():
-    #self.vocab_reader(["data/preprocessed/trainset/zhidao.train.json"], end_line=10000)
-    #self.vocab_saver()
-    #print("save done")
     with tf.Graph().as_default(), tf.Session() as sess:
-        
         model = Word2Vec(sess)
-        logger.info("loading vocab")
-        model.vocab_dict = load_vocab_dict()
-        logger.info("loading vocab done, vocab_size is %s" % len(model.vocab_dict))
         model.build_graph()
         logger.info("build graph done")
-        model.saver.restore(sess, "./model_check/embedding.ckpt-0")
+        # model.saver.restore(sess, "./model_check/embedding.ckpt-0")
         logger.info("load chekpoint done")
-        for i in range(args.epoch):
+        for i in range(Params.epoch):
             logger.info("%s epoch starts..." % i)
             model.train(i + 1)
 
 if __name__ == "__main__":
     main()
-

@@ -36,11 +36,16 @@ class Vocabulary:
         if vocab not in self.vocab_dict:
             return 0 if type(vocab) == str else '<unknown>'
         return self.vocab_dict[vocab]
-    def get_char(self, char):
-        if char not in self.char_dict:
-            return 0 if type(char) == str else "<unknown>"
-        return self.char_dict[char]
-
+    def get_char(self, word):
+        if len(word) >= 8: return [0] * 8
+        res = []
+        for char in word:
+            if char not in self.char_dict:
+                res.append(0)
+            else:
+                res.append(self.char_dict[char])
+        return res
+    
     def close(self):
         with open("char2.dict", "w") as fp:
             for k, v in self.char_dict.items():
@@ -50,14 +55,14 @@ class Vocabulary:
 class Writer:
     def __init__(self):
         self.writers = {
-            "DESCRIPTION": open("description.stat", "w"),
-            "YES_NO": open("yes_no.stat", "w"),
-            "ENTITY": open("entity.stat", "w"),}
+            "DESCRIPTION": open("description_dev.stat", "w"),
+            "YES_NO": open("yes_no_dev.stat", "w"),
+            "ENTITY": open("entity_dev.stat", "w"),}
         self.writers_id = {
-            "DESCRIPTION": open("description_id.stat", "w"),
-            "YES_NO": open("yes_no_id.stat", "w"),
-            "ENTITY": open("entity.stat", "w"),} 
-        self.train_stat_writer = open("train_stat.info", "w")
+            "DESCRIPTION": open("description_id_dev.stat", "w"),
+            "YES_NO": open("yes_no_id_dev.stat", "w"),
+            "ENTITY": open("entity_id_dev.stat", "w"),} 
+        self.train_stat_writer = open("dev_stat.info", "w")
         self.stat = {}
         for key in ["DESCRIPTION", "YES_NO", "ENTITY", "DESCRIPTION_question", "YES_NO_question", "ENTITY_question"]:
             self.stat[key] = [0] * 100000
@@ -94,7 +99,8 @@ def preprocess(mode):
             [test_process(json.loads(line)) for line in fp]
         elif mode == "train":
             [train_process(i, json.loads(line)) for i, line in enumerate(fp)]
-
+        elif mode == "dev":
+            [train_process(i, json.loads(line)) for i, line in enumerate(fp)]
 def test_process(l):
     pass
 
@@ -115,8 +121,8 @@ def train_process(lineth, data_json):
     base_format["segmented_paragraph"] = doc["segmented_paragraphs"][doc["most_related_para"]]
     base_format["segmented_answer"] = base_format["segmented_paragraph"][answer_spans[0][0]:answer_spans[0][1]]
     base_format["segmented_question"] = data_json["segmented_question"]
-    base_format["char_paragraph"] = [[vocabulary.get_char(char) for char in word] for word in base_format["segmented_paragraph"]]
-    base_format["char_question"] = [[vocabulary.get_char(char) for char in word] for word in base_format["segmented_question"]]
+    base_format["char_paragraph"] = [vocabulary.get_char(word) for word in base_format["segmented_paragraph"]]
+    base_format["char_question"] = [vocabulary.get_char(word) for word in base_format["segmented_question"]]
     writer.write(base_format)
     base_format["segmented_paragraph"] = [vocabulary.get(id) for id in base_format["segmented_paragraph"]]
     base_format["segmented_answer"] = [vocabulary.get(id) for id in base_format["segmented_answer"]]
@@ -125,6 +131,6 @@ def train_process(lineth, data_json):
     
 
 if __name__ == "__main__":
-    preprocess("train")
+    preprocess("dev")
     writer.close()
     vocabulary.close()
