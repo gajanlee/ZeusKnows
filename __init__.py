@@ -59,7 +59,10 @@ class Vocabulary:
         logger.info("Char dictionary loaded DONE! SUM %s ." % len(self.char_dict))
 
     # Get A Char's ID
-    def getCharID(self, char):
+    def getCharID(self, char, ls=False):
+        if ls: return [self.char_dict.get(ch, 0) for ch in char]
+        return self.char_dict.get(char, 0)
+        if isinstance(char, list): return [self.char_dict.get(char, 0) for ch in char]
         return self.char_dict.get(char, 0)
 
     # Format as same as char dict.

@@ -55,8 +55,8 @@ class Writer:
         base_format["segmented_paragraph"] = doc["segmented_paragraphs"][doc["most_related_para"]]
         base_format["segmented_answer"] = base_format["segmented_paragraph"][answer_spans[0]:answer_spans[1]]
         base_format["segmented_question"] = data_json["segmented_question"]
-        base_format["char_paragraph"] = [vocabulary.getCharID(word) for word in base_format["segmented_paragraph"]]
-        base_format["char_question"] = [vocabulary.getCharID(word) for word in base_format["segmented_question"]]
+        base_format["char_paragraph"] = [vocabulary.getCharID(word, True) for word in base_format["segmented_paragraph"]]
+        base_format["char_question"] = [vocabulary.getCharID(word, True) for word in base_format["segmented_question"]]
         self.write(base_format)
         base_format["segmented_paragraph"] = [vocabulary.getVocabID(id) for id in base_format["segmented_paragraph"]]
         base_format["segmented_answer"] = [vocabulary.getVocabID(id) for id in base_format["segmented_answer"]]
