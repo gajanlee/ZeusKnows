@@ -7,7 +7,7 @@ emb = sess.run('embeddings:0')
 print(emb[10][0])
 import numpy as np
 np.save("word_emb.npy", emb)
-print("Save OVer")
+print("Save Over")
 b = np.load("word_emb.npy")
 print(b.shape)
 print(b[10][0])

@@ -2,7 +2,7 @@
 class Params:
     
     # ------> Preprocessed Parameters
-    data_files_format = "../Dureader/data/preprocessed/{mode}set/zhidao.{mode}.json"
+    data_files_format = "../DuReader/data/preprocessed/{mode}set/zhidao.{mode}.json"
     train_files = ["../Dureader/data/preprocessed/trainset/zhidao.train.json"]
 
     endline = None #100

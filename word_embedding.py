@@ -86,7 +86,7 @@ class Word2Vec(object):
         self.saver.restore(self.sess, "./model.ckpt-1")
 
     def train(self, epoch):
-        count = 0
+        count = 0; self.rd = self.reader()
         while True:
             inputs, labels = self.get_batch()
             if inputs is None: break
