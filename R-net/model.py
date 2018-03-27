@@ -58,8 +58,6 @@ class Vocabulary:
         return "".join(output)
 
 
-
-
 class Model(object):
     def __init__(self,is_training = True, demo = False):
         # Build the computational graph when initializing
@@ -172,6 +170,22 @@ class Model(object):
                                 output = 0,
                                 is_training = self.is_training)
 
+    def passage_rank(self):
+        args = {"num_units": Params.attn_size,
+                "memeory": 1
+
+        }
+
+        # r_Q
+        initial_state = question_pooling(question, units = Params.attn_size, weights = weights_q, memory_len = question_len, scope = "question_pooling")
+        r_P = attention question_pooling(self.attn_passage)
+        # 注意不同的长度，稍后需要mask
+        g = v_g * tf.tanh(W_g * tf.concat(r_Q, r_P))
+        g_hat = tf.softmax(g)
+        
+        cross_entropy
+        total_loss = cross_entropy + loss_AP
+
     def attention_match_rnn(self):
         # Apply gated attention recurrent network for both query-passage matching and self matching networks
         with tf.variable_scope("attention_match_rnn"):
@@ -198,8 +212,10 @@ class Model(object):
                             self.passage_w_len,
                             Params.attn_size,
                             cell,
-                            scope = scopes[i])
+                            scope = scopes[i])  # first cycle, it is "vtP"
                 memory = inputs # self matching (attention over itself)
+
+                if i == 1: self.attn_passage = inputs
             self.self_matching_output = inputs
 
     def bidirectional_readout(self):

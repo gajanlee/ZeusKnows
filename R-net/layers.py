@@ -118,7 +118,7 @@ def pointer_net(passage, passage_len, question, question_len, cell, params, scop
         softmax logits for the answer pointer of the beginning and the end of the answer span
     '''
     with tf.variable_scope(scope):
-        weights_q, weights_p = params
+        weights_q, weights_p = params   # weight_q contains "v, W_u_Q, W_v_Q"
         shapes = passage.get_shape().as_list()
         initial_state = question_pooling(question, units = Params.attn_size, weights = weights_q, memory_len = question_len, scope = "question_pooling")
         inputs = [passage, initial_state]
