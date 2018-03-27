@@ -35,12 +35,18 @@ class Writer:
     def preprocess(self):
         with open(Params.data_files_format.format(mode=self.mode)) as fp:
             if self.mode == "test":
-                pass
-            elif self.mode in ["train", "dev"]:
+                [self.test_process(json.loads(line), i) for i, line in enumerate(fp)]
+            elif self.mode in ["train", "dev", "test"]:
                 [self.train_process(json.loads(line), i) for i, line in enumerate(fp)]
     
     def train_process(self, data_json, i):
         if i % 1000 == 0: logger.info(self.mode.upper() + " %s LINE..." % i)
+        
+        if self.mode == "test":
+            
+
+
+            return
         if not data_json["match_scores"]: return
         answer_spans = data_json["answer_spans"][0] # Actually it only ones
         doc = data_json["documents"][data_json["answer_docs"][0]]
