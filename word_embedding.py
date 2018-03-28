@@ -96,7 +96,7 @@ class Word2Vec(object):
         saver.restore(self.sess, tf.train.latest_checkpoint('./model_check'))
         emb = self.sess.run('embeddings:0')
         
-        nemb = tf.nn.l2_normalize("embeddings:0", 1)
+        nemb = tf.nn.l2_normalize(emb, 1)
         
         analogy_a = tf.placeholder(dtype=tf.int32)
         analogy_b = tf.placeholder(dtype=tf.int32)
@@ -128,7 +128,7 @@ class Word2Vec(object):
         self.saver = tf.train.Saver()
 
     def eval(self):
-        self.nearby(["苹果", "一", "手机"])
+        self.nearby(["苹果"])
     
     def nearby(self, words, num=20):
         """Prints out nearby words given a list of words."""
@@ -138,6 +138,7 @@ class Word2Vec(object):
         for i in range(len(words)):
             print("\n%s\n=====================================" % (words[i]))
         for (neighbor, distance) in zip(idx[i, :num], vals[i, :num]):
+            print(neighbor)
             print("%-20s %6.4f" % (vocabulary.VocabID_to_vocab(neighbor), distance))
 
 
@@ -153,7 +154,7 @@ def main():
             model.train(i + 1)
 
 def eval_main():
-    with tf.Graph().as_default(), tf.Session as sess:
+    with tf.Graph().as_default(), tf.Session() as sess:
         model = Word2Vec(sess)
         model.build_eval_graph()
         logger.info("build evaluate graph done")
@@ -161,4 +162,4 @@ def eval_main():
         model.eval()
 
 if __name__ == "__main__":
-    main()
+    eval_main()
