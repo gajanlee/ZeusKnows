@@ -15,8 +15,9 @@ args = parser.parse_args()
 
 class Vocabulary:
     def __init__(self):
-        self.vocab_dict, self.char_dict, self.wordlst = {"unknown": [0, Params.count_threshold]}, {"<unknown>": [0, Params.count_threshold]}, []
+        self.vocab_dict, self.char_dict, self.wordlst = {"<vocab-unknown>": [0, Params.count_threshold]}, {"<char-unknown>": [0, Params.count_threshold]}, []
         self.vocab_ids = self.char_ids = 1
+        self.vocab_id_dict = {}
         #self.load_char_dict()
         if os.path.exists(Params.vocab_path): self.load_vocab_dict()
         else: logger.warning("NO VOCABULARY DICTIONARY!")
@@ -70,12 +71,15 @@ class Vocabulary:
         with open(Params.vocab_path) as fp:
             for i, line in enumerate(fp):
                 res = line.split(" ")
-                try:self.vocab_dict[res[0]] = int(res[1])
+                try:self.vocab_dict[res[0]] = int(res[1]); self.vocab_id_dict[int(res[1])] = res[0]
                 except: pass
         logger.info("Vocabulary dictionary loaded DONE! SUM %s ." % len(self.vocab_dict))        
 
     def getVocabID(self, word):
         return self.vocab_dict.get(word, 0)
+
+    def VocabID_to_vocab(self, id):
+        self.vocab_id_dict.get(id, "<vocab-unknown>")
 
     def purify_sorted(self, data_dict):
         sort_list = sorted(list(filter(lambda x: x[1][1] >= Params.count_threshold, data_dict.items())), key=lambda x: x[1][1])

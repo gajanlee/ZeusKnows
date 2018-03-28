@@ -75,13 +75,6 @@ class Word2Vec(object):
         self.merge_sumarry_op = tf.summary.merge_all()
         self.summary_writer = tf.summary.FileWriter("/tmp/emb_logs", self.sess.graph)
     
-    def build_eval_graph(self):
-        """Build the Eval Graph."""
-        analogy_a = tf.placeholder(dtype=tf.int32)
-        analogy_b = tf.placeholder(dtype=tf.int32)
-        analogy_c = tf.placeholder(dtype=tf.int32)
-        pass
-    
     def restore(self):
         self.saver.restore(self.sess, "./model.ckpt-1")
 
@@ -97,6 +90,56 @@ class Word2Vec(object):
                 logger.info("batch: %s, loss: %s" % (count, cur_loss))
         self.saver.save(self.sess, "./model_check/embedding.ckpt", global_step=epoch)
 
+    def build_eval_graph(self):
+        """Build the Eval Graph."""
+        saver = tf.train.import_meta_graph('./model_check/embedding.ckpt-15.meta')
+        saver.restore(self.sess, tf.train.latest_checkpoint('./model_check'))
+        emb = self.sess.run('embeddings:0')
+        
+        nemb = tf.nn.l2_normalize("embeddings:0", 1)
+        
+        analogy_a = tf.placeholder(dtype=tf.int32)
+        analogy_b = tf.placeholder(dtype=tf.int32)
+        analogy_c = tf.placeholder(dtype=tf.int32)
+
+        a_emb = tf.gather(nemb, analogy_a)
+        b_emb = tf.gather(nemb, analogy_b)
+        c_emb = tf.gather(nemb, analogy_c)
+
+        target = c_emb + (a_emb - b_emb)
+        dist = tf.matmul(target, nemb, transpose_b=True)
+        _, pred_idx = tf.nn.top_k(dist, 4)
+
+        nearby_word = tf.placeholder(dtype=tf.int32)
+        nearby_emb = tf.gather(nemb, nearby_word)
+        nearyby_dist = tf.matmul(nearby_emb, nemb, transpose_b=True)
+        nearby_val, nearby_idx = tf.nn.top_k(nearyby_dist, min(1000, nemb.shape[0]))
+
+
+        self._analogy_a = analogy_a
+        self._analogy_b = analogy_b
+        self._analogy_c = analogy_c
+        self._analogy_pred_idx = pred_idx
+        self._nearby_word = nearby_word
+        self._nearby_val = nearby_val
+        self._nearby_idx = nearby_idx
+
+        tf.global_variables_initializer().run()
+        self.saver = tf.train.Saver()
+
+    def eval(self):
+        self.nearby(["苹果", "一", "手机"])
+    
+    def nearby(self, words, num=20):
+        """Prints out nearby words given a list of words."""
+        ids = np.array([vocabulary.getVocabID(x) for x in words])
+        vals, idx = self.sess.run(
+            [self._nearby_val, self._nearby_idx], {self._nearby_word: ids})
+        for i in range(len(words)):
+            print("\n%s\n=====================================" % (words[i]))
+        for (neighbor, distance) in zip(idx[i, :num], vals[i, :num]):
+            print("%-20s %6.4f" % (vocabulary.VocabID_to_vocab(neighbor), distance))
+
 
 def main():
     with tf.Graph().as_default(), tf.Session() as sess:
@@ -108,6 +151,14 @@ def main():
         for i in range(Params.epoch):
             logger.info("%s epoch starts..." % i)
             model.train(i + 1)
+
+def eval_main():
+    with tf.Graph().as_default(), tf.Session as sess:
+        model = Word2Vec(sess)
+        model.build_eval_graph()
+        logger.info("build evaluate graph done")
+
+        model.eval()
 
 if __name__ == "__main__":
     main()
