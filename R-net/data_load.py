@@ -169,7 +169,7 @@ def load_data(dir_):
             indices], shapes)
 
 def get_dev():
-    
+    print("start load dev set...")
     devset, shapes = ljz_load_data(Params.train_dir)  #Params.dev_dir)
     indices = devset[-1]
     # devset = [np.reshape(input_, shapes[i]) for i,input_ in enumerate(devset)]

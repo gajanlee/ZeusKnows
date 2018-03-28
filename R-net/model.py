@@ -24,8 +24,10 @@ optimizer_factory = {"adadelta":tf.train.AdadeltaOptimizer,
 class Vocabulary:
     def __init__(self):
         self.vocab_dict, self.char_dict = {}, {}
-        self.load_vocab_dict("../ZeusKnows/vocab.dict")
-        self.load_char_dict("../ZeusKnows/char.dict")
+        self.load_vocab_dict("../vocab.dict")
+        self.load_char_dict("../char.dict")
+        print("vocab_dict size is ", len(self.vocab_dict))
+        print("char_dict size is ", len(self.char_dict))
 
     def load_vocab_dict(self, vocab_path):
         with open(vocab_path) as fp: 
@@ -170,7 +172,7 @@ class Model(object):
                                 output = 0,
                                 is_training = self.is_training)
 
-    def passage_rank(self):
+    """def passage_rank(self):
         args = {"num_units": Params.attn_size,
                 "memeory": 1
 
@@ -185,7 +187,7 @@ class Model(object):
         
         cross_entropy
         total_loss = cross_entropy + loss_AP
-
+"""
     def attention_match_rnn(self):
         # Apply gated attention recurrent network for both query-passage matching and self matching networks
         with tf.variable_scope("attention_match_rnn"):
@@ -306,7 +308,7 @@ def main():
         init = True
         #glove = np.memmap(Params.data_dir + "glove.np", dtype = np.float32, mode = "r")
         #glove = np.reshape(glove,(Params.vocab_size,Params.emb_size))
-        glove = np.load("../ZeusKnows/word_emb.npy")
+        glove = np.load("../word_emb.npy")
        
     with model.graph.as_default():
         config = tf.ConfigProto()

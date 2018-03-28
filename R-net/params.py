@@ -4,7 +4,7 @@ class Params():
     data_size = -1 # -1 to use all data
     num_epochs = 10
     train_prop = 0.9 # Not implemented atm
-    data_dir = "../ZeusKnows/"
+    data_dir = "../"
     train_dir = data_dir + "description_id_train.stat"
     dev_dir = data_dir + "description_id_dev.stat"
     logdir = "./train/train"
@@ -21,11 +21,11 @@ class Params():
 
     # Training
 	# NOTE: To use demo, put batch_size == 1
-    mode = "test" # case-insensitive options: ["train", "test", "debug"]
+    mode = "train" # case-insensitive options: ["train", "test", "debug"]
     dropout = 0.2 # dropout probability, if None, don't use dropout
     zoneout = None # zoneout probability, if None, don't use zoneout
     optimizer = "adam" # Options: ["adadelta", "adam", "gradientdescent", "adagrad"]
-    batch_size = 50 if mode is not "test" else 1# Size of the mini-batch for training
+    batch_size = 50 if mode is not "test" else 100# Size of the mini-batch for training
     save_steps = 50 # Save the model at every 50 steps
     clip = True # clip gradient norm
     norm = 5.0 # global norm
@@ -40,10 +40,10 @@ class Params():
     max_p_len = 300 #300 # Maximum number of words in each passage context
     max_q_len = 20 #30 # Maximum number of words in each question context
     max_char_len = 5 #16 # Maximum number of characters in a word
-    vocab_size = 144836 #91604 # Number of vocabs in glove.840B.300d.txt + 1 for an unknown token
-    char_vocab_size = 8136 #95 # Number of characters in glove.840B.300d.char.txt + 1 for an unknown character
+    vocab_size = 556192 #91604 # Number of vocabs in glove.840B.300d.txt + 1 for an unknown token
+    char_vocab_size = 9000 #95 # Number of characters in glove.840B.300d.char.txt + 1 for an unknown character
     emb_size = 300 # Embeddings size for words
-    char_emb_size = 100 #8 # Embeddings size for characters
+    char_emb_size = 20 #8 # Embeddings size for characters
     attn_size = 75 # RNN cell and attention module size
     num_layers = 3 # Number of layers at question-passage matching
     bias = True # Use bias term in attention

@@ -3,7 +3,10 @@ data/
 *.dict
 *.stat
 model_check*/
-word_emb.npy
+word_emb*.npy
+*.bin
+*/train/
+
 # Word Embedding
 # Byte-compiled / optimized / DLL files
 __pycache__/
