@@ -7,7 +7,10 @@ import argparse
 import json
 import sys
 
-def f1_and_EM(index, ground_truth, passage, dict_):
+from bleu_metric.bleu import Bleu
+from rouge_metric.rouge import Rouge
+
+def f1_and_EM_bleu_rouge(index, ground_truth, passage, dict_):
     if index[0] == index[1]:
         pred_ind = [passage[index[0]].tolist()]
     else:
@@ -22,9 +25,26 @@ def f1_and_EM(index, ground_truth, passage, dict_):
     answer_ = dict_.ind2word(answer_ind)
     f1 = f1_score(answer,answer_)
     EM = exact_match_score(answer,answer_)
+
+    bleu = Bleu().compute_score(answer, [answer_])[0][3]
+    rouge = Rouge().calc_score([answer], [answer_])
+    
     print("===============>", answer)
     print("===============>", answer_)
-    return f1, EM
+    return f1, EM, bleu, rouge
+
+
+def bleu_and_rouge(index, ground_truth, passage, dict_):
+    if index[0] == index[1]:
+        pred_ind = [passage[index[0]].tolist()]
+    else:
+        pred_ind = passage[index[0]:index[1]].tolist()
+        if pred_ind is None:
+            pred_ind = [0]
+    if ground_truth[0] == ground_truth[1]:
+        answer_ind = [passage[ground_truth[0]].tolist()]
+    else:
+        answer_ind = passage[ground_truth[0]:ground_truth[1]].tolist()
 
 def normalize_answer(s):
     """Lower text and remove punctuation, articles and extra whitespace."""

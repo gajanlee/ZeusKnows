@@ -287,16 +287,21 @@ def test():
         sv = tf.train.Supervisor()
         with sv.managed_session() as sess:
             sv.saver.restore(sess, tf.train.latest_checkpoint(Params.logdir))
-            EM, F1 = 0.0, 0.0
+            EM, F1, Bleu_4, Rouge_L = 0.0, 0.0, 0.0, 0.0
             for step in tqdm(range(model.num_batch), total = model.num_batch, ncols=70, leave=False, unit='b'):
                 index, ground_truth, passage = sess.run([model.output_index, model.indices, model.passage_w])
                 for batch in range(Params.batch_size):
-                    f1, em = f1_and_EM(index[batch], ground_truth[batch], passage[batch], dict_)
+                    f1, em, bleu, rouge = f1_and_EM_bleu_rouge(index[batch], ground_truth[batch], passage[batch], dict_)
                     F1 += f1
                     EM += em
+                    Bleu_4 += bleu
+                    Rouge_L += rouge
             F1 /= float(model.num_batch * Params.batch_size)
             EM /= float(model.num_batch * Params.batch_size)
-            print("Exact_match: {}\nF1_score: {}".format(EM,F1))
+            Bleu_4 /= float(Params.batch_size)
+            Rouge_L /= float(Params.batch_size)
+            print("\nDev_loss: {}\nDev_Exact_match: {}\nDev_F1_score: {}\nBleu_4_score:{}\nRouge_L_score:{}".format(dev_loss,EM,F1,Bleu_4,Rouge_L))
+
 
 def main():
     model = Model(is_training = True); print("Built model")
@@ -330,14 +335,22 @@ def main():
                         feed_dict = {data: devdata[i][sample] for i,data in enumerate(model.data)}
                         index, dev_loss = sess.run([model.output_index, model.mean_loss], feed_dict = feed_dict)
                         F1, EM = 0.0, 0.0
+                        Bleu_4, Rouge_L = 0.0, 0.0
                         for batch in range(Params.batch_size):
-                            f1, em = f1_and_EM(index[batch], devdata[8][sample][batch], devdata[0][sample][batch], dict_)
+                            f1, em, bleu, rouge = f1_and_EM_bleu_rouge(index[batch], devdata[8][sample][batch], devdata[0][sample][batch], dict_)
                             F1 += f1
                             EM += em
+                            Bleu_4 += bleu
+                            Rouge_L += rouge
                         F1 /= float(Params.batch_size)
                         EM /= float(Params.batch_size)
+                        Bleu_4 /= float(Params.batch_size)
+                        Rouge_L /= float(Params.batch_size)
                         sess.run(model.metric_assign,{model.F1_placeholder: F1, model.EM_placeholder: EM, model.dev_loss_placeholder: dev_loss})
-                        print("\nDev_loss: {}\nDev_Exact_match: {}\nDev_F1_score: {}".format(dev_loss,EM,F1))
+                        print("\nDev_loss: {}\nDev_Exact_match: {}\nDev_F1_score: {}\nBleu_4_score:{}\nRouge_L_score:{}".format(dev_loss,EM,F1,Bleu_4,Rouge_L))
+
+def gen_ans():
+    pass
 
 if __name__ == '__main__':
     if Params.mode.lower() == "debug":
@@ -353,5 +366,8 @@ if __name__ == '__main__':
     elif Params.mode.lower() == "train":
         print("Training...")
         main()
+    elif Params.mode.lower() == "gen_ans":
+        print("Generate Answer...")
+        gen_ans()
     else:
         print("Invalid mode.")
