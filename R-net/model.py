@@ -298,9 +298,9 @@ def test():
                     Rouge_L += rouge
             F1 /= float(model.num_batch * Params.batch_size)
             EM /= float(model.num_batch * Params.batch_size)
-            Bleu_4 /= float(Params.batch_size)
-            Rouge_L /= float(Params.batch_size)
-            print("\nDev_loss: {}\nDev_Exact_match: {}\nDev_F1_score: {}\nBleu_4_score:{}\nRouge_L_score:{}".format(dev_loss,EM,F1,Bleu_4,Rouge_L))
+            Bleu_4 /= float(model.num_batch * Params.batch_size)
+            Rouge_L /= float(model.num_batch * Params.batch_size)
+            print("\nExact_match: {}\nF1_score: {}\nBleu_4_score:{}\nRouge_L_score:{}".format(EM,F1,Bleu_4,Rouge_L))
 
 
 def main():
