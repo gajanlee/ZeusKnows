@@ -102,7 +102,8 @@ class Model(object):
                 self.question_w_len_,
                 self.passage_c_len,
                 self.question_c_len,
-                self.indices) = self.data
+                self.indices,
+                self.tags ) = self.data
                 
             self.passage_w_len = tf.squeeze(self.passage_w_len_, -1)
             self.question_w_len = tf.squeeze(self.question_w_len_, -1)
@@ -226,8 +227,8 @@ class Model(object):
 
 
     def passage_rank(self):
-        params = (self.params["W_v_P_3"], 
-                self.params["W_v_Q_2"], self.params["v"])
+        params = ([self.params["W_v_P_3"],
+                self.params["W_v_Q_2"]], self.params["v"])   # maybe v2
         print("v_P=======>", self.v_P)
         print("r_Q=======>", self.r_Q)
         self.r_P = passage_pooling(self.v_P, self.r_Q, units = Params.attn_size, weights = params, memory_len=self.passage_w_len)
@@ -239,7 +240,7 @@ class Model(object):
     def p_rank_loss(self):
         with tf.variable_scope("loss_rank"):
             shapes = self.passage_w.shape
-            self.mean_loss_p = cross_entropy(self.p_tag, self.g_hat)
+            self.mean_loss_p = cross_entropy(self.tags, self.g_hat)
             self.optimizer_p = optimizer_factory[Params.optimizer](**Params.opt_arg[Params.optimizer])
             
             if Params.clip:
@@ -385,10 +386,11 @@ def gen_ans():
 
 def rank():
     model = Model(is_training = True); print("Built model")
+    devdata, dev_ind = get_dev()    
     with model.graph.as_default():
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
-        sv = tf.train.Supervisor(logdir=Params.logdir
+        sv = tf.train.Supervisor(logdir=Params.logdir,
                                 save_model_secs=0,
                                 global_step = model.global_step,
                                 init_op = model.init_op)
@@ -396,11 +398,15 @@ def rank():
         with sv.managed_session(config=config) as sess:
             for epoch in range(1, Params.num_epochs + 1):
                 if sv.should_stop(): break
-                if step % Params.save_steps == 0:
-                    gs = sess.run(model.global_step)
-                    sv.saver.save(sess, Params.logdir + '/test_prank_epoch_%d_step_%d'%(gs//model.num_batch, gs%model.num_batch))
-
-                    loss = sess.run(model.mean_loss_p, feed_dict={})
+                for step in tqdm(range(model.num_batch), total = model.num_batch, ncols=70, leave=False, unit='b'):
+                    sess.run(model.train_op_p)
+                    if step % Params.save_steps == 0:
+                        gs = sess.run(model.global_step)
+                        sv.saver.save(sess, Params.logdir + '/test_prank_epoch_%d_step_%d'%(gs//model.num_batch, gs%model.num_batch))
+                        sample = np.random.choice(dev_ind, Params.batch_size)
+                        feed_dict = {data: devdata[i][sample] for i,data in enumerate(model.data)}
+                        loss = sess.run(model.mean_loss_p, feed_dict=feed_dict)
+                        print("\n\n Dev_loss: {}".format(loss))
                     
 
 if __name__ == '__main__':

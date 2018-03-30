@@ -40,7 +40,10 @@ def get_attn_params(attn_size,initializer = tf.truncated_normal_initializer):
                 "W_v_Phat":tf.get_variable("W_v_Phat",dtype = tf.float32, shape = (2 * attn_size, attn_size), initializer = initializer()),
                 "W_h_a":tf.get_variable("W_h_a",dtype = tf.float32, shape = (2 * attn_size, attn_size), initializer = initializer()),
                 "W_v_Q":tf.get_variable("W_v_Q",dtype = tf.float32, shape = (attn_size,  attn_size), initializer = initializer()),
-                "v":tf.get_variable("v",dtype = tf.float32, shape = (attn_size), initializer =initializer())}
+                "v":tf.get_variable("v",dtype = tf.float32, shape = (attn_size), initializer=initializer())
+                "W_v_P_3": tf.get_variable("W_v_P_3", dtype=tf.float32, shape=(attn_size, attn_size), initializer=initializer()),
+                "W_v_Q_2": tf.get_variable("W_v_Q_2", dtype=tf.float32, shape=(attn_size, attn_size), initializer=initializer()),
+                "v_g": tf.get_variable("v_g", dtype=tf.float32, shape=(attn_size), initializer=initializer()}
         return params
 
 def encoding(word, char, word_embeddings, char_embeddings, scope = "embedding"):
