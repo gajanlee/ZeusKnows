@@ -128,7 +128,7 @@ def pointer_net(passage, passage_len, question, question_len, cell, params, scop
         _, state = cell(attention_pool, initial_state)
         inputs = [passage, state]
         p2_logits = attention(inputs, Params.attn_size, weights_p, memory_len = passage_len, scope = "attention", reuse = True)
-        return tf.stack((p1_logits,p2_logits),1)
+        return tf.stack((p1_logits,p2_logits),1), initial_state
 
 def attention_rnn(inputs, inputs_len, units, attn_cell, bidirection = True, scope = "gated_attention_rnn", is_training = True):
     with tf.variable_scope(scope):
@@ -144,6 +144,13 @@ def attention_rnn(inputs, inputs_len, units, attn_cell, bidirection = True, scop
                                             sequence_length = inputs_len,
                                             dtype=tf.float32)
         return outputs
+
+def passage_pooling(memory, inputs, units, weights, memory_len = None, scope = "passage_pooling"):
+    with tf.variable_scope(scope):
+        inputs_ = [memory, inputs]
+        attn = attention(inputs_, units, weights, memory_len = memory_len, scope = "passage_attention_pooling")
+        attn = tf.expand_dims(attn, -1)
+        return tf.reduce_sum(attn * memory)
 
 def question_pooling(memory, units, weights, memory_len = None, scope = "question_pooling"):
     with tf.variable_scope(scope):

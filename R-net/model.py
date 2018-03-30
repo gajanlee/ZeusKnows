@@ -113,8 +113,10 @@ class Model(object):
             self.bidirectional_readout()
             self.pointer_network()
             self.outputs()
-
+            
+            self.passage_rank()
             if is_training:
+                self.p_rank_loss()
                 self.loss_function()
                 self.summary()
                 self.init_op = tf.global_variables_initializer()
@@ -172,22 +174,6 @@ class Model(object):
                                 output = 0,
                                 is_training = self.is_training)
 
-    """def passage_rank(self):
-        args = {"num_units": Params.attn_size,
-                "memeory": 1
-
-        }
-
-        # r_Q
-        initial_state = question_pooling(question, units = Params.attn_size, weights = weights_q, memory_len = question_len, scope = "question_pooling")
-        r_P = attention question_pooling(self.attn_passage)
-        # 注意不同的长度，稍后需要mask
-        g = v_g * tf.tanh(W_g * tf.concat(r_Q, r_P))
-        g_hat = tf.softmax(g)
-        
-        cross_entropy
-        total_loss = cross_entropy + loss_AP
-"""
     def attention_match_rnn(self):
         # Apply gated attention recurrent network for both query-passage matching and self matching networks
         with tf.variable_scope("attention_match_rnn"):
@@ -215,6 +201,9 @@ class Model(object):
                             Params.attn_size,
                             cell,
                             scope = scopes[i])  # first cycle, it is "vtP"
+                
+                if i == 0: self.v_P = inputs
+                
                 memory = inputs # self matching (attention over itself)
 
                 if i == 1: self.attn_passage = inputs
@@ -233,7 +222,49 @@ class Model(object):
         params = (([self.params["W_u_Q"],self.params["W_v_Q"]],self.params["v"]),
                 ([self.params["W_h_P"],self.params["W_h_a"]],self.params["v"]))
         cell = apply_dropout(GRUCell(Params.attn_size*2), size = self.final_bidirectional_outputs.shape[-1], is_training = self.is_training)
-        self.points_logits = pointer_net(self.final_bidirectional_outputs, self.passage_w_len, self.question_encoding, self.question_w_len, cell, params, scope = "pointer_network")
+        self.points_logits, self.r_Q = pointer_net(self.final_bidirectional_outputs, self.passage_w_len, self.question_encoding, self.question_w_len, cell, params, scope = "pointer_network")
+
+
+    def passage_rank(self):
+        params = (self.params["W_v_P_3"], 
+                self.params["W_v_Q_2"], self.params["v"])
+        print("v_P=======>", self.v_P)
+        print("r_Q=======>", self.r_Q)
+        self.r_P = passage_pooling(self.v_P, self.r_Q, units = Params.attn_size, weights = params, memory_len=self.passage_w_len)
+        g = self.params["v_g"] * tf.tanh(tf.matmul([self.r_Q, self.r_P], self.params["W_g_2"]))
+        g_hat = tf.nn.softmax(g)
+
+        self.g_hat = g_hat
+
+    def p_rank_loss(self):
+        with tf.variable_scope("loss_rank"):
+            shapes = self.passage_w.shape
+            self.mean_loss_p = cross_entropy(self.p_tag, self.g_hat)
+            self.optimizer_p = optimizer_factory[Params.optimizer](**Params.opt_arg[Params.optimizer])
+            
+            if Params.clip:
+                # gradient clipping by norm
+                gradients, variables = zip(*self.optimizer_p.compute_gradients(self.mean_loss_p))
+                gradients, _ = tf.clip_by_global_norm(gradients, Params.norm)
+                self.train_op_p = self.optimizer_p.apply_gradients(zip(gradients, variables), global_step = self.global_step)
+            else:
+                self.train_op_p = self.optimizer_p.minimize(self.mean_loss_p, global_step = self.global_step)
+
+        """
+        args = {"num_units": Params.attn_size,
+                "memeory": 1
+        }
+
+        # r_Q
+        initial_state = question_pooling(question, units = Params.attn_size, weights = weights_q, memory_len = question_len, scope = "question_pooling")
+        r_P = attention question_pooling(self.attn_passage)
+        # 注意不同的长度，稍后需要mask
+        g = v_g * tf.tanh(W_g * tf.concat(r_Q, r_P))
+        g_hat = tf.softmax(g)
+        
+        cross_entropy
+        total_loss = cross_entropy + loss_AP
+    """
 
     def outputs(self):
         self.logit_1, self.logit_2 = tf.split(self.points_logits, 2, axis = 1)
@@ -352,6 +383,26 @@ def main():
 def gen_ans():
     pass
 
+def rank():
+    model = Model(is_training = True); print("Built model")
+    with model.graph.as_default():
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        sv = tf.train.Supervisor(logdir=Params.logdir
+                                save_model_secs=0,
+                                global_step = model.global_step,
+                                init_op = model.init_op)
+        glove = np.load("../word_emb.npy")        
+        with sv.managed_session(config=config) as sess:
+            for epoch in range(1, Params.num_epochs + 1):
+                if sv.should_stop(): break
+                if step % Params.save_steps == 0:
+                    gs = sess.run(model.global_step)
+                    sv.saver.save(sess, Params.logdir + '/test_prank_epoch_%d_step_%d'%(gs//model.num_batch, gs%model.num_batch))
+
+                    loss = sess.run(model.mean_loss_p, feed_dict={})
+                    
+
 if __name__ == '__main__':
     if Params.mode.lower() == "debug":
         print("Debugging...")
@@ -369,5 +420,8 @@ if __name__ == '__main__':
     elif Params.mode.lower() == "gen_ans":
         print("Generate Answer...")
         gen_ans()
+    elif Params.mode.lower() == "prank":
+        print("Passage Rank Train")
+        rank()
     else:
         print("Invalid mode.")
