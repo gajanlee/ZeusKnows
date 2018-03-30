@@ -40,10 +40,13 @@ def get_attn_params(attn_size,initializer = tf.truncated_normal_initializer):
                 "W_v_Phat":tf.get_variable("W_v_Phat",dtype = tf.float32, shape = (2 * attn_size, attn_size), initializer = initializer()),
                 "W_h_a":tf.get_variable("W_h_a",dtype = tf.float32, shape = (2 * attn_size, attn_size), initializer = initializer()),
                 "W_v_Q":tf.get_variable("W_v_Q",dtype = tf.float32, shape = (attn_size,  attn_size), initializer = initializer()),
-                "v":tf.get_variable("v",dtype = tf.float32, shape = (attn_size), initializer=initializer())
-                "W_v_P_3": tf.get_variable("W_v_P_3", dtype=tf.float32, shape=(attn_size, attn_size), initializer=initializer()),
-                "W_v_Q_2": tf.get_variable("W_v_Q_2", dtype=tf.float32, shape=(attn_size, attn_size), initializer=initializer()),
-                "v_g": tf.get_variable("v_g", dtype=tf.float32, shape=(attn_size), initializer=initializer()}
+                "v":tf.get_variable("v",dtype = tf.float32, shape = (attn_size), initializer=initializer()),
+                "W_v_P_3": tf.get_variable("W_v_P_3", dtype=tf.float32, shape=(2*attn_size, 2*attn_size), initializer=initializer()),
+                "W_v_Q_2": tf.get_variable("W_v_Q_2", dtype=tf.float32, shape=(2*attn_size, 2*attn_size), initializer=initializer()),
+                "v_2": tf.get_variable("v_2", dtype=tf.float32, shape=(2*attn_size), initializer=initializer()),
+                "v_g": tf.get_variable("v_g", dtype=tf.float32, shape=(4*attn_size), initializer=initializer()),
+                "W_g_2": tf.get_variable("W_g_2", dtype=tf.float32, shape=(4*attn_size, 4*attn_size), initializer=initializer()),
+            }
         return params
 
 def encoding(word, char, word_embeddings, char_embeddings, scope = "embedding"):
@@ -124,6 +127,7 @@ def pointer_net(passage, passage_len, question, question_len, cell, params, scop
         weights_q, weights_p = params   # weight_q contains "v, W_u_Q, W_v_Q"
         shapes = passage.get_shape().as_list()
         initial_state = question_pooling(question, units = Params.attn_size, weights = weights_q, memory_len = question_len, scope = "question_pooling")
+        print("================>", initial_state)
         inputs = [passage, initial_state]
         p1_logits = attention(inputs, Params.attn_size, weights_p, memory_len = passage_len, scope = "attention")
         scores = tf.expand_dims(p1_logits, -1)
@@ -153,7 +157,12 @@ def passage_pooling(memory, inputs, units, weights, memory_len = None, scope = "
         inputs_ = [memory, inputs]
         attn = attention(inputs_, units, weights, memory_len = memory_len, scope = "passage_attention_pooling")
         attn = tf.expand_dims(attn, -1)
-        return tf.reduce_sum(attn * memory)
+        print("==========attn===>", attn)
+        print("==============memory=>", memory)
+        print("==============>sum", attn*memory)
+        print("====reduce===>", tf.reduce_sum(attn*memory))
+        print("====redu1====>", tf.reduce_sum(attn*memory, 1))
+        return tf.reduce_sum(attn * memory, 1)
 
 def question_pooling(memory, units, weights, memory_len = None, scope = "question_pooling"):
     with tf.variable_scope(scope):
@@ -193,6 +202,7 @@ def attention(inputs, units, weights, scope = "attention", memory_len = None, re
             inp = tf.reshape(inp, (-1, shapes[-1]))
             if w is None:
                 w = tf.get_variable("w_%d"%i, dtype = tf.float32, shape = [shapes[-1],Params.attn_size], initializer = tf.contrib.layers.xavier_initializer())
+            print(inp, w, i)
             outputs = tf.matmul(inp, w)
             # Hardcoded attention output reshaping. Equation (4), (8), (9) and (11) in the original paper.
             if len(shapes) > 2:
@@ -206,6 +216,7 @@ def attention(inputs, units, weights, scope = "attention", memory_len = None, re
         if Params.bias:
             b = tf.get_variable("b", shape = outputs.shape[-1], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
             outputs += b
+        print("========output=========>", outputs, v)
         scores = tf.reduce_sum(tf.tanh(outputs) * v, [-1])
         if memory_len is not None:
             scores = mask_attn_score(scores, memory_len)

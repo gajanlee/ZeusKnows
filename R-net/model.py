@@ -228,19 +228,21 @@ class Model(object):
 
     def passage_rank(self):
         params = ([self.params["W_v_P_3"],
-                self.params["W_v_Q_2"]], self.params["v"])   # maybe v2
+                self.params["W_v_Q_2"]], self.params["v_2"])   # maybe v2
         print("v_P=======>", self.v_P)
         print("r_Q=======>", self.r_Q)
         self.r_P = passage_pooling(self.v_P, self.r_Q, units = Params.attn_size, weights = params, memory_len=self.passage_w_len)
-        g = self.params["v_g"] * tf.tanh(tf.matmul([self.r_Q, self.r_P], self.params["W_g_2"]))
+        print("=========r_P=========>", self.r_P)
+        g = self.params["v_g"] * tf.tanh(tf.matmul(tf.concat([self.r_Q, self.r_P], 1), self.params["W_g_2"]))
         g_hat = tf.nn.softmax(g)
 
+        print("===========g_hat====>", self.g_hat)
         self.g_hat = g_hat
 
     def p_rank_loss(self):
         with tf.variable_scope("loss_rank"):
             shapes = self.passage_w.shape
-            self.mean_loss_p = cross_entropy(self.tags, self.g_hat)
+            self.mean_loss_p = cross_entropy(self.g_hat, tf.convert_to_tensor(self.tags))
             self.optimizer_p = optimizer_factory[Params.optimizer](**Params.opt_arg[Params.optimizer])
             
             if Params.clip:

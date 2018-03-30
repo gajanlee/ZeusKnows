@@ -210,7 +210,7 @@ def get_batch(is_training = True):
             return [np.reshape(input_[ind], shapes[i]) for i,input_ in enumerate(input_list)]
 
         data = get_data(inputs=ind_list,
-                        dtypes=[np.int32]*9,
+                        dtypes=[np.int32]*10,
                         capacity=Params.batch_size*32,
                         num_threads=6)
         #[np.reshape(input_[ind], shapes[i] for i, input_ in enumerate(input_list))
@@ -264,6 +264,7 @@ def ljz_load_data(_file):
     with open(_file) as fp:
         for i, line in enumerate(fp):
             #if i == 1000: break
+            print(i)
             d = json.loads(line)
             if len(d["segmented_paragraph"]) > max_plen or len(d["segmented_question"]) > max_qlen:
                 #print(len(d["segmented_paragraph"]), len(d["segmented_question"]))
@@ -279,9 +280,10 @@ def ljz_load_data(_file):
             question_char_len.append([min(len(word), 8) for word in d["char_question"]])
             if Params.mode.lower() == "prank":
                 indices.append([0, 0])
+                tags.append(d["tag"])
             else:
                 indices.append(d["answer_spans"])
-            tags.append(d["tag"])
+                tags.append([0])
 
         # to numpy
         indices = np.reshape(np.asarray(indices,np.int32),(-1,2))
