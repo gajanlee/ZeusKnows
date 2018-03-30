@@ -171,7 +171,7 @@ def load_data(dir_):
 def get_dev():
     print("start load dev set...")
     devset, shapes = ljz_load_data(Params.train_dir)  #Params.dev_dir)
-    indices = devset[-1]
+    indices = devset[-2]
     # devset = [np.reshape(input_, shapes[i]) for i,input_ in enumerate(devset)]
 
     dev_ind = np.arange(indices.shape[0],dtype = np.int32)
@@ -188,7 +188,7 @@ def get_batch(is_training = True):
             #print(s.shape)
         print(len(input_list))
         #np.reshape(input_list[2][2], (500, 8))
-        indices = input_list[-1]
+        indices = input_list[-2]
 
         train_ind = np.arange(indices.shape[0],dtype = np.int32)
         np.random.shuffle(train_ind)
@@ -257,6 +257,7 @@ def ljz_load_data(_file):
     passage_word_len, question_word_len = [], []
     passage_char_len, question_char_len = [], []
     indices = []
+    tags = []
 
     max_plen, max_qlen, max_clen = Params.max_p_len, Params.max_q_len, Params.max_char_len
 
@@ -276,10 +277,15 @@ def ljz_load_data(_file):
             question_word_len.append([len(d["segmented_question"])])
             passage_char_len.append([min(len(word), 8) for word in d["char_paragraph"]])
             question_char_len.append([min(len(word), 8) for word in d["char_question"]])
-            indices.append(d["answer_spans"])
-            
+            if Params.mode.lower() == "prank":
+                indices.append([0, 0])
+            else:
+                indices.append(d["answer_spans"])
+            tags.append(d["tag"])
+
         # to numpy
         indices = np.reshape(np.asarray(indices,np.int32),(-1,2))
+        tags = np.reshape(np.asarray(tags, np.int16), (-1, 1))
         passage_word_len = np.reshape(np.asarray(passage_word_len, np.int32),(-1,1))
         question_word_len = np.reshape(np.asarray(question_word_len, np.int32),(-1,1))
         # p_char_len = pad_data(p_char_len,p_max_word)
@@ -291,13 +297,13 @@ def ljz_load_data(_file):
                 (max_plen, max_clen,),(max_qlen,max_clen,),
                 (1,),(1,),
                 (max_plen,),(max_qlen,),
-                (2,)]
+                (2,), (1,)]
        
         return ([np.array(passage_word_ids), np.array(question_word_ids),
                 np.array(passage_char_ids), np.array(question_char_ids),
                 passage_word_len, question_word_len,
                 np.array(p_char_len), np.array(q_char_len),
-                indices], shapes)
+                indices, tags], shapes)
 
 if __name__ == "__main__":
     a, b = get_batch()
