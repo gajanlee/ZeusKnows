@@ -10,6 +10,7 @@ class Params():
     #train_dir = data_dir + "entity_id_train.stat"
     #dev_dir = data_dir + "entity_id_dev.stat"
     logdir = "./train/train"
+    logdir_rank = "./rank/train"
     glove_dir = "./glove.840B.300d.txt" # Glove file name (If you want to use your own glove, replace the file name here)
     glove_char = "./glove.840B.300d.char.txt" # Character Glove file name
     coreNLP_dir = "./stanford-corenlp-full-2017-06-09" # Directory to Stanford coreNLP tool

@@ -264,7 +264,7 @@ def ljz_load_data(_file):
     with open(_file) as fp:
         for i, line in enumerate(fp):
             #if i == 1000: break
-            print(i)
+            #print(i)
             d = json.loads(line)
             if len(d["segmented_paragraph"]) > max_plen or len(d["segmented_question"]) > max_qlen:
                 #print(len(d["segmented_paragraph"]), len(d["segmented_question"]))
@@ -287,7 +287,7 @@ def ljz_load_data(_file):
 
         # to numpy
         indices = np.reshape(np.asarray(indices,np.int32),(-1,2))
-        tags = np.reshape(np.asarray(tags, np.int16), (-1, 1))
+        tags = np.reshape(np.asarray(tags, np.float32), (-1, 1))
         passage_word_len = np.reshape(np.asarray(passage_word_len, np.int32),(-1,1))
         question_word_len = np.reshape(np.asarray(question_word_len, np.int32),(-1,1))
         # p_char_len = pad_data(p_char_len,p_max_word)

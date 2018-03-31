@@ -46,7 +46,11 @@ def get_attn_params(attn_size,initializer = tf.truncated_normal_initializer):
                 "v_2": tf.get_variable("v_2", dtype=tf.float32, shape=(2*attn_size), initializer=initializer()),
                 "v_g": tf.get_variable("v_g", dtype=tf.float32, shape=(4*attn_size), initializer=initializer()),
                 "W_g_2": tf.get_variable("W_g_2", dtype=tf.float32, shape=(4*attn_size, 4*attn_size), initializer=initializer()),
-            }
+                "W_f_h": tf.get_variable("W_f_h", dtype=tf.float32, shape=(4*attn_size, 8*attn_size), initializer=initializer()),    # hidden layer weight
+                "b_f_h": tf.get_variable("b_f_h", dtype=tf.float32, shape=(1, 8*attn_size), initializer=initializer()),  # hidden layer bias
+                "W_f_o": tf.get_variable("W_f_o", dtype=tf.float32, shape=(8*attn_size, 1), initializer=initializer()), # output layer weight
+                "b_f_o": tf.get_variable("b_f_o", dtype=tf.float32, shape=(1, 1), initializer=initializer()),   # output layer bias 
+        }
         return params
 
 def encoding(word, char, word_embeddings, char_embeddings, scope = "embedding"):
@@ -222,8 +226,14 @@ def attention(inputs, units, weights, scope = "attention", memory_len = None, re
             scores = mask_attn_score(scores, memory_len)
         return tf.nn.softmax(scores) # all attention output is softmaxed now
 
+def cross_entropy_p(output, target):
+    cross_entropy = target * tf.log(output + 1e-8) + (1 - target) * tf.log(1-output + 1e-8)
+    cross_entropy = -tf.reduce_mean(cross_entropy, 1)
+    return tf.reduce_mean(cross_entropy)
 def cross_entropy(output, target):
+    print(tf.log(output + 1e-8))
     cross_entropy = target * tf.log(output + 1e-8)
+    print(cross_entropy)
     cross_entropy = -tf.reduce_sum(cross_entropy, 2) # sum across passage timestep
     cross_entropy = tf.reduce_mean(cross_entropy, 1) # average across pointer networks output
     return tf.reduce_mean(cross_entropy) # average across batch size

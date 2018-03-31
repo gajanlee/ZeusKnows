@@ -40,7 +40,7 @@ class PassageTag:
         self.save()
 
     def save(self):
-        with open("tag.stat", "w") as f, open("tag_id.stat", "w") as f_id:
+        with open("tag_train.stat", "w") as f, open("tag_id_train.stat", "w") as f_id:
             import random
             self.attr[self.__NEGATIVE] = list(filter(lambda x: random.randint(1, 8) <= 2, self.attr[self.__NEGATIVE]))
             [f.write("\n".join([json.dumps(attr, ensure_ascii=False) for attr in attrs])) for attrs in self.attr]
@@ -52,7 +52,9 @@ class PassageTag:
                     attr["char_paragraph"] = [[vocabulary.getCharID(char) for char in word] for word in attr["char_paragraph"]]
                     attr["char_question"] = [[vocabulary.getCharID(char) for char in word] for word in attr["char_question"]]
             
-            [f_id.write("\n".join([json.dumps(attr) for attr in attrs])) for attrs in self.attr]
+            for attrs in self.attr:
+                f_id.write("\n".join([json.dumps(attr) for attr in attrs]))
+                f_id.write("\n")
             
         logger.info("positive sum is %s" % len(self.attr[self.__POSITIVE]))
         logger.info("negative sum is %s" % len(self.attr[self.__NEGATIVE]))

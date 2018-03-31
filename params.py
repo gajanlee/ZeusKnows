@@ -4,7 +4,7 @@ class Params:
     # ------> Preprocessed Parameters
     data_files_format = "../DuReader/data/preprocessed/{mode}set/zhidao.{mode}.json"
     train_files = ["../DuReader/data/preprocessed/trainset/zhidao.train.json"]
-
+    dev_files = ["../DuReader/data/preprocessed/devset/zhidao.dev.json"]
     endline = None #100
 
     # ------> Vocabulary Parameters

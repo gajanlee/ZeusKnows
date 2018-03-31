@@ -6,7 +6,7 @@ model_check*/
 word_emb*.npy
 *.bin
 */train/
-
+*/rank/
 # Word Embedding
 # Byte-compiled / optimized / DLL files
 __pycache__/

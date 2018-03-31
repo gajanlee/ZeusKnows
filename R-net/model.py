@@ -233,16 +233,21 @@ class Model(object):
         print("r_Q=======>", self.r_Q)
         self.r_P = passage_pooling(self.v_P, self.r_Q, units = Params.attn_size, weights = params, memory_len=self.passage_w_len)
         print("=========r_P=========>", self.r_P)
-        g = self.params["v_g"] * tf.tanh(tf.matmul(tf.concat([self.r_Q, self.r_P], 1), self.params["W_g_2"]))
-        g_hat = tf.nn.softmax(g)
+        g = tf.tanh(tf.matmul(tf.concat([self.r_Q, self.r_P], 1), self.params["W_g_2"])) * self.params["v_g"]
+        print("======g============>", g)
+
+        hidden = tf.matmul(g, self.params["W_f_h"]) + self.params["b_f_h"]
+        output = tf.matmul(hidden, self.params["W_f_o"]) + self.params["b_f_o"]
+        self.g_hat = tf.nn.softmax(output)
 
         print("===========g_hat====>", self.g_hat)
-        self.g_hat = g_hat
 
     def p_rank_loss(self):
         with tf.variable_scope("loss_rank"):
             shapes = self.passage_w.shape
-            self.mean_loss_p = cross_entropy(self.g_hat, tf.convert_to_tensor(self.tags))
+            print(self.tags)
+            self.mean_loss_p = cross_entropy_p(self.g_hat, tf.cast(self.tags, dtype=tf.float32))
+            print("mean_loss_p", self.mean_loss_p)
             self.optimizer_p = optimizer_factory[Params.optimizer](**Params.opt_arg[Params.optimizer])
             
             if Params.clip:
@@ -283,6 +288,7 @@ class Model(object):
         with tf.variable_scope("loss"):
             shapes = self.passage_w.shape
             self.indices_prob = tf.one_hot(self.indices, shapes[1])
+            print("====indices_prob===>", self.indices_prob)
             self.mean_loss = cross_entropy(self.points_logits, self.indices_prob)
             self.optimizer = optimizer_factory[Params.optimizer](**Params.opt_arg[Params.optimizer])
 
@@ -392,7 +398,7 @@ def rank():
     with model.graph.as_default():
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
-        sv = tf.train.Supervisor(logdir=Params.logdir,
+        sv = tf.train.Supervisor(logdir=Params.logdir_rank,
                                 save_model_secs=0,
                                 global_step = model.global_step,
                                 init_op = model.init_op)
@@ -404,7 +410,7 @@ def rank():
                     sess.run(model.train_op_p)
                     if step % Params.save_steps == 0:
                         gs = sess.run(model.global_step)
-                        sv.saver.save(sess, Params.logdir + '/test_prank_epoch_%d_step_%d'%(gs//model.num_batch, gs%model.num_batch))
+                        sv.saver.save(sess, Params.logdir_rank + '/test_prank_epoch_%d_step_%d'%(gs//model.num_batch, gs%model.num_batch))
                         sample = np.random.choice(dev_ind, Params.batch_size)
                         feed_dict = {data: devdata[i][sample] for i,data in enumerate(model.data)}
                         loss = sess.run(model.mean_loss_p, feed_dict=feed_dict)
