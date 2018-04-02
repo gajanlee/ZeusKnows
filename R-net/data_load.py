@@ -171,7 +171,7 @@ def load_data(dir_):
 def get_dev():
     print("start load dev set...")
     devset, shapes = ljz_load_data(Params.train_dir)  #Params.dev_dir)
-    indices = devset[-2]
+    indices = devset[-3]
     # devset = [np.reshape(input_, shapes[i]) for i,input_ in enumerate(devset)]
 
     dev_ind = np.arange(indices.shape[0],dtype = np.int32)
@@ -183,12 +183,15 @@ def get_batch(is_training = True):
     """Loads training data and put them in queues"""
     with tf.device('/cpu:0'):
         # Load dataset
-        input_list, shapes = ljz_load_data(Params.train_dir if is_training else Params.dev_dir)
+        if Params.mode.lower == "gen_rank":
+            input_list, shapes = ljz_load_data(Params.test_rank_dir)
+        else:
+            input_list, shapes = ljz_load_data(Params.train_dir if is_training else Params.dev_dir)
         #for s in input_list:
             #print(s.shape)
         print(len(input_list))
         #np.reshape(input_list[2][2], (500, 8))
-        indices = input_list[-2]
+        indices = input_list[-3]    # Warning.
 
         train_ind = np.arange(indices.shape[0],dtype = np.int32)
         np.random.shuffle(train_ind)
@@ -258,6 +261,7 @@ def ljz_load_data(_file):
     passage_char_len, question_char_len = [], []
     indices = []
     tags = []
+    ids = []    # question's id
 
     max_plen, max_qlen, max_clen = Params.max_p_len, Params.max_q_len, Params.max_char_len
 
@@ -281,13 +285,19 @@ def ljz_load_data(_file):
             if Params.mode.lower() == "prank":
                 indices.append([0, 0])
                 tags.append(d["tag"])
+            elif Params.mode.lower() == "gen_rank":
+                indices.append([0, 0])
+                tags.append([0]])
             else:
                 indices.append(d["answer_spans"])
                 tags.append([0])
 
+            ids.append([d["question_id"]])
+
         # to numpy
         indices = np.reshape(np.asarray(indices,np.int32),(-1,2))
         tags = np.reshape(np.asarray(tags, np.float32), (-1, 1))
+        ids = np.reshape(np.asarray(ids, np.int32), (-1, 1))
         passage_word_len = np.reshape(np.asarray(passage_word_len, np.int32),(-1,1))
         question_word_len = np.reshape(np.asarray(question_word_len, np.int32),(-1,1))
         # p_char_len = pad_data(p_char_len,p_max_word)
@@ -299,13 +309,13 @@ def ljz_load_data(_file):
                 (max_plen, max_clen,),(max_qlen,max_clen,),
                 (1,),(1,),
                 (max_plen,),(max_qlen,),
-                (2,), (1,)]
+                (2,), (1,), (1,)]
        
         return ([np.array(passage_word_ids), np.array(question_word_ids),
                 np.array(passage_char_ids), np.array(question_char_ids),
                 passage_word_len, question_word_len,
                 np.array(p_char_len), np.array(q_char_len),
-                indices, tags], shapes)
+                indices, tags, ids], shapes)
 
 if __name__ == "__main__":
     a, b = get_batch()

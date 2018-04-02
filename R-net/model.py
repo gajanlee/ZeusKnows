@@ -103,7 +103,8 @@ class Model(object):
                 self.passage_c_len,
                 self.question_c_len,
                 self.indices,
-                self.tags ) = self.data
+                self.tags,
+                self.ids ) = self.data
                 
             self.passage_w_len = tf.squeeze(self.passage_w_len_, -1)
             self.question_w_len = tf.squeeze(self.question_w_len_, -1)
@@ -341,6 +342,26 @@ def test():
             Bleu_4 /= float(model.num_batch * Params.batch_size)
             Rouge_L /= float(model.num_batch * Params.batch_size)
             print("\nExact_match: {}\nF1_score: {}\nBleu_4_score:{}\nRouge_L_score:{}".format(EM,F1,Bleu_4,Rouge_L))
+
+def gen_prank():
+    model = Model(is_training = False); print("Built model")
+    dict_ = Vocabulary()
+    res = []
+    with model.graph.as_default():
+        sv = tf.train.Supervisor()
+        with sv.managed_session() as sess:
+            sv.saver.restore(sess, tf.train.latest_checkpoint(Params.logdir_rank))
+            for step in tqdm(range(model.num_batch), total = model.num_batch, ncols=70, leave=False, unit='b'):
+                score, passage, question, tags, ids = sess.run([model.g_hat, model.passage_w, model.question_w, model.tags, model.ids])
+                for batch in range(Params.batch_size):
+                    res.append({
+                        "question_id": ids[batch],
+                        "passage": dict_.ind2word(passage[batch]),
+                        "question": dict_.ind2word(question[batch]),
+                        "socre": score[batch],
+                    })
+    with open("scores_rank.stat", "w") as f:
+        f.write("\n".join([json.dumps(r) for r in res]))
 
 
 def main():
