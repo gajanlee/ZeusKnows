@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from __future__ import division
 from __init__ import *
+import random
 
 class Writer:
     """Write Infomation to nominated files."""
@@ -10,6 +11,7 @@ class Writer:
     def __init__(self, mode, save_mode=0x113):
         self.mode = mode; self.save_mode = save_mode
         
+        self.passage_id = 0
         if self.__permission(self.__TEXT_FLAG):
             self.writers = {
                 "DESCRIPTION": open("description_{}.stat".format(mode), "w"),
@@ -63,7 +65,7 @@ class Writer:
         if id == True:
             self.writers_test_id.write(json.dumps(data) + "\n")
         else:
-            self.writers_id[data["question_type"]].write(json.dumps(data) + "\n")
+            self.writers_test[data["question_type"]].write(json.dumps(data) + "\n")
 
     def close(self, signal=0x111):
         if self.__permission(self.__TEXT_FLAG):
@@ -119,19 +121,28 @@ class Writer:
         self.write_wellformat(base_format)
 
     def test_process(self, data_json, i):
+        print(i)
         format = {
             "question_id": data_json["question_id"],
             "question_type": data_json["question_type"],
             "segmented_question": data_json["segmented_question"],
             "char_question": [vocabulary.getCharID(word, True) for word in data_json["segmented_question"]]
         }
-        for doc in data_json["document"]:
-            for para in doc["segmented_paragraph"]:
+        count = 0
+        for doc in data_json["documents"]:
+            rank = doc["bs_rank_pos"]
+            for para in doc["segmented_paragraphs"]:
+                if count >= 3: return
+                if random.randint(0, 2) != 0: continue
+                count += 1
+                format["rank"] = rank
+                format["passage_id"] = self.passage_id
+                self.passage_id += 1
                 format["segmented_paragraph"] = para
                 format["char_paragraph"] = [vocabulary.getCharID(word, True) for word in para]
                 self.write_test(format, False)
                 format["segmented_paragraph"] = [vocabulary.getVocabID(id) for id in para]
-                format["segmented_question"] = [vocabulary.getVocabID(id) for id in format["segmented_question"]]
+                format["segmented_question"] = [vocabulary.getVocabID(id) for id in data_json["segmented_question"]]
                 self.write_test(format, True)
 
     def __enter__(self):
