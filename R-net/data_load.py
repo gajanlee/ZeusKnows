@@ -171,6 +171,7 @@ def load_data(dir_):
 def get_dev():
     print("start load dev set...")
     devset, shapes = ljz_load_data(Params.train_dir)  #Params.dev_dir)
+    #devset, shapes = ljz_load_data(Params.test_rank_dir)
     indices = devset[-3]
     # devset = [np.reshape(input_, shapes[i]) for i,input_ in enumerate(devset)]
 
@@ -183,7 +184,7 @@ def get_batch(is_training = True):
     """Loads training data and put them in queues"""
     with tf.device('/cpu:0'):
         # Load dataset
-        if Params.mode.lower == "gen_rank":
+        if Params.mode.lower() == "gen_rank":
             input_list, shapes = ljz_load_data(Params.test_rank_dir)
         else:
             input_list, shapes = ljz_load_data(Params.train_dir if is_training else Params.dev_dir)
@@ -213,7 +214,7 @@ def get_batch(is_training = True):
             return [np.reshape(input_[ind], shapes[i]) for i,input_ in enumerate(input_list)]
 
         data = get_data(inputs=ind_list,
-                        dtypes=[np.int32]*10,
+                        dtypes=[np.int32]*11,
                         capacity=Params.batch_size*32,
                         num_threads=6)
         #[np.reshape(input_[ind], shapes[i] for i, input_ in enumerate(input_list))
@@ -267,7 +268,7 @@ def ljz_load_data(_file):
 
     with open(_file) as fp:
         for i, line in enumerate(fp):
-            #if i == 1000: break
+            #if i == 100: break
             #print(i)
             d = json.loads(line)
             if len(d["segmented_paragraph"]) > max_plen or len(d["segmented_question"]) > max_qlen:
@@ -287,17 +288,16 @@ def ljz_load_data(_file):
                 tags.append(d["tag"])
             elif Params.mode.lower() == "gen_rank":
                 indices.append([0, 0])
-                tags.append([0]])
+                tags.append([0])
             else:
                 indices.append(d["answer_spans"])
                 tags.append([0])
-
-            ids.append([d["question_id"]])
+            ids.append([d["question_id"], d["passage_id"]])
 
         # to numpy
         indices = np.reshape(np.asarray(indices,np.int32),(-1,2))
         tags = np.reshape(np.asarray(tags, np.float32), (-1, 1))
-        ids = np.reshape(np.asarray(ids, np.int32), (-1, 1))
+        ids = np.reshape(np.asarray(ids, np.int32), (-1, 2))
         passage_word_len = np.reshape(np.asarray(passage_word_len, np.int32),(-1,1))
         question_word_len = np.reshape(np.asarray(question_word_len, np.int32),(-1,1))
         # p_char_len = pad_data(p_char_len,p_max_word)
@@ -309,7 +309,7 @@ def ljz_load_data(_file):
                 (max_plen, max_clen,),(max_qlen,max_clen,),
                 (1,),(1,),
                 (max_plen,),(max_qlen,),
-                (2,), (1,), (1,)]
+                (2,), (1,), (2,)]
        
         return ([np.array(passage_word_ids), np.array(question_word_ids),
                 np.array(passage_char_ids), np.array(question_char_ids),

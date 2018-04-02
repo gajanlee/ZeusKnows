@@ -7,7 +7,7 @@ class Params():
     data_dir = "../"
     train_dir = data_dir + "tag_id_train.stat"
     dev_dir = data_dir + "tag_id_dev.stat"
-    test_rank_dir = data_dir + "question_id.stat"
+    test_rank_dir = data_dir + "rank_id.stat"
     #train_dir = data_dir + "entity_id_train.stat"
     #dev_dir = data_dir + "entity_id_dev.stat"
     logdir = "./train/train"
@@ -25,7 +25,7 @@ class Params():
 
     # Training
 	# NOTE: To use demo, put batch_size == 1
-    mode = "prank" # case-insensitive options: ["train", "test", "debug"]
+    mode = "gen_rank" # case-insensitive options: ["train", "test", "debug"]
     dropout = 0.2 # dropout probability, if None, don't use dropout
     zoneout = None # zoneout probability, if None, don't use zoneout
     optimizer = "adam" # Options: ["adadelta", "adam", "gradientdescent", "adagrad"]

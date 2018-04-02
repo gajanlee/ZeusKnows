@@ -116,7 +116,7 @@ class Model(object):
             self.pointer_network()
             self.outputs()
             
-            self.passage_rank()
+            #self.passage_rank()
             if is_training:
                 self.p_rank_loss()
                 self.loss_function()
@@ -324,24 +324,28 @@ def test():
     model = Model(is_training = False); print("Built model")
     dict_ = Vocabulary()
     #dict_ = pickle.load(open(Params.data_dir + "dictionary.pkl","r"))
+    res = []
     with model.graph.as_default():
         sv = tf.train.Supervisor()
         with sv.managed_session() as sess:
             sv.saver.restore(sess, tf.train.latest_checkpoint(Params.logdir))
             EM, F1, Bleu_4, Rouge_L = 0.0, 0.0, 0.0, 0.0
             for step in tqdm(range(model.num_batch), total = model.num_batch, ncols=70, leave=False, unit='b'):
-                index, ground_truth, passage = sess.run([model.output_index, model.indices, model.passage_w])
+                index, ground_truth, passage, ids = sess.run([model.output_index, model.indices, model.passage_w, model.ids])
                 for batch in range(Params.batch_size):
                     f1, em, bleu, rouge = f1_and_EM_bleu_rouge(index[batch], ground_truth[batch], passage[batch], dict_)
                     F1 += f1
                     EM += em
                     Bleu_4 += bleu
                     Rouge_L += rouge
+                    res.append({"question_id": int(ids[batch][0]), "passage_id": int(ids[batch][1]), "spans": list(index[batch])})
             F1 /= float(model.num_batch * Params.batch_size)
             EM /= float(model.num_batch * Params.batch_size)
             Bleu_4 /= float(model.num_batch * Params.batch_size)
             Rouge_L /= float(model.num_batch * Params.batch_size)
             print("\nExact_match: {}\nF1_score: {}\nBleu_4_score:{}\nRouge_L_score:{}".format(EM,F1,Bleu_4,Rouge_L))
+    with open("../test_res.stat", "w") as fp:
+        fp.write("\n".join([json.dumps(r) for r in res]))
 
 def gen_prank():
     model = Model(is_training = False); print("Built model")
@@ -355,11 +359,12 @@ def gen_prank():
                 score, passage, question, tags, ids = sess.run([model.g_hat, model.passage_w, model.question_w, model.tags, model.ids])
                 for batch in range(Params.batch_size):
                     res.append({
-                        "question_id": ids[batch],
+                        "question_id": ids[batch][0],
                         "passage": dict_.ind2word(passage[batch]),
                         "question": dict_.ind2word(question[batch]),
-                        "socre": score[batch],
+                        "socre": score[batch][0],
                     })
+    print(res)
     with open("scores_rank.stat", "w") as f:
         f.write("\n".join([json.dumps(r) for r in res]))
 
@@ -454,7 +459,11 @@ if __name__ == '__main__':
         main()
     elif Params.mode.lower() == "gen_ans":
         print("Generate Answer...")
-        gen_ans()
+        #gen_ans()
+    elif Params.mode.lower() == "gen_rank":
+        print("Generate Rank Scores...")
+        #gen_prank()
+        test()
     elif Params.mode.lower() == "prank":
         print("Passage Rank Train")
         rank()
