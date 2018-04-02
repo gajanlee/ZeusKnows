@@ -5,7 +5,7 @@ class Params():
     num_epochs = 10
     train_prop = 0.9 # Not implemented atm
     data_dir = "../"
-    train_dir = data_dir + "tag_id_dev.stat"
+    train_dir = data_dir + "tag_id_train.stat"
     dev_dir = data_dir + "tag_id_dev.stat"
     #train_dir = data_dir + "entity_id_train.stat"
     #dev_dir = data_dir + "entity_id_dev.stat"
