@@ -7,6 +7,7 @@ class Params():
     data_dir = "../"
     train_dir = data_dir + "tag_id_dev.stat"
     dev_dir = data_dir + "tag_id_dev.stat"
+    test_rank_dir = data_dir + "question_id.stat"
     #train_dir = data_dir + "entity_id_train.stat"
     #dev_dir = data_dir + "entity_id_dev.stat"
     logdir = "./train/train"

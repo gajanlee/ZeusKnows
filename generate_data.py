@@ -5,9 +5,9 @@ from __init__ import *
 class Writer:
     """Write Infomation to nominated files."""
     # multiple permission writer and created
-    __TEXT_FLAG, __TEXT_ID_FLAG, __TEXT_WELL_FLAG = 0x100, 0x010, 0x001
+    __TEXT_FLAG, __TEXT_ID_FLAG, __TEXT_WELL_FLAG, __TEXT_TEST_FLAG = 0x100, 0x010, 0x001, 0x002
 
-    def __init__(self, mode, save_mode=0x111):
+    def __init__(self, mode, save_mode=0x113):
         self.mode = mode; self.save_mode = save_mode
         
         if self.__permission(self.__TEXT_FLAG):
@@ -25,6 +25,12 @@ class Writer:
                 "DESCRIPTION": open("description_wellformat_{}.stat".format(mode), "w"),
                 "YES_NO": open("yes_no_wellformat_{}.stat".format(mode), "w"),
                 "ENTITY": open("entity_wellformat_{}.stat".format(mode), "w"),}
+        if self.__permission(self.__TEXT_TEST_FLAG):    # generate test data format
+            self.writers_test = {
+                "DESCRIPTION": open("description_rank_{}.stat".format(mode), "w"),
+                "YES_NO": open("yes_no_rank_{}.stat".format(mode), "w"),
+                "ENTITY": open("entity_rank_{}.stat".format(mode), "w"),}
+            self.writers_test_id = open("rank_id.stat", "w")
        
         
         #self.train_stat_writer = open("dev_stat.info", "w")
@@ -53,6 +59,12 @@ class Writer:
                     "%s __label__%s\n" % (" ".join(c), label)
                 )
 
+    def write_test(self, data, id=False):
+        if id == True:
+            self.writers_test_id.write(json.dumps(data) + "\n")
+        else:
+            self.writers_id[data["question_type"]].write(json.dumps(data) + "\n")
+
     def close(self, signal=0x111):
         if self.__permission(self.__TEXT_FLAG):
             [writer.close() for writer in self.writers.values()] 
@@ -60,14 +72,16 @@ class Writer:
             [writer.close() for writer in self.writers_id.values()]
         if self.__permission(self.__TEXT_WELL_FLAG):
             [writer.close() for writer in self.writers_format.values()]
-            
+        if self.__permission(self.__TEXT_TEST_FLAG):
+            [writer.close() for writer in self.writers_test.values()]
+            self.writers_test_id.close()
 
     def preprocess(self):
         with open(Params.data_files_format.format(mode=self.mode)) as fp:
             if self.mode == "test":
-                pass
+                [self.test_process(json.loads(line), i) for i, line in enumerate(fp)]
                 #[self.test_process(json.loads(line), i) for i, line in enumerate(fp)]
-            elif self.mode in ["train", "dev", "test"]:
+            elif self.mode in ["train", "dev"]:
                 [self.train_process(json.loads(line), i) for i, line in enumerate(fp)]
     
     def train_process(self, data_json, i):
@@ -104,14 +118,33 @@ class Writer:
 
         self.write_wellformat(base_format)
 
+    def test_process(self, data_json, i):
+        format = {
+            "question_id": data_json["question_id"],
+            "question_type": data_json["question_type"],
+            "segmented_question": data_json["segmented_question"],
+            "char_question": [vocabulary.getCharID(word, True) for word in data_json["segmented_question"]]
+        }
+        for doc in data_json["document"]:
+            for para in doc["segmented_paragraph"]:
+                format["segmented_paragraph"] = para
+                format["char_paragraph"] = [vocabulary.getCharID(word, True) for word in para]
+                self.write_test(format, False)
+                format["segmented_paragraph"] = [vocabulary.getVocabID(id) for id in para]
+                format["segmented_question"] = [vocabulary.getVocabID(id) for id in format["segmented_question"]]
+                self.write_test(format, True)
+
     def __enter__(self):
         return self
     def __exit__(self, *exc_info):
         self.close(self.__TEXT_WELL_FLAG)
 
 if __name__ == "__main__":
-    with Writer("train", 0x001) as wt, Writer("dev", 0x001) as wd:
+    with Writer("test", 0x002) as wt:
+        wt.preprocess()
+
+    """with Writer("train", 0x001) as wt, Writer("dev", 0x001) as wd:
         logger.info("Start process trainset...")
         wt.preprocess()
         logger.info("Start process devset...")
-        wd.preprocess()
+        wd.preprocess()"""
