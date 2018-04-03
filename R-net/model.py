@@ -116,9 +116,9 @@ class Model(object):
             self.pointer_network()
             self.outputs()
             
-            #self.passage_rank()
+            self.passage_rank()
             if is_training:
-                #self.p_rank_loss()
+                self.p_rank_loss()
                 self.loss_function()
                 self.summary()
                 self.init_op = tf.global_variables_initializer()
@@ -239,8 +239,8 @@ class Model(object):
 
         hidden = tf.matmul(g, self.params["W_f_h"]) + self.params["b_f_h"]
         output = tf.matmul(hidden, self.params["W_f_o"]) + self.params["b_f_o"]
-        self.g_hat = tf.nn.softmax(output)
-
+        #self.g_hat = tf.nn.softmax(output)
+        self.g_hat = tf.tanh(output)
         print("===========g_hat====>", self.g_hat)
 
     def p_rank_loss(self):
@@ -314,6 +314,8 @@ class Model(object):
         tf.summary.scalar("F1_Score",self.F1)
         tf.summary.scalar("Exact_Match",self.EM)
         tf.summary.scalar('learning_rate', Params.opt_arg[Params.optimizer]['learning_rate'])
+        tf.summary.scalar('rank_loss', self.mean_loss_p)
+        # tf.summary.histogram('g_hat', self.g_hat)
         self.merged = tf.summary.merge_all()
 
 def debug():
@@ -359,14 +361,13 @@ def gen_prank():
                 score, passage, question, tags, ids = sess.run([model.g_hat, model.passage_w, model.question_w, model.tags, model.ids])
                 for batch in range(Params.batch_size):
                     res.append({
-                        "question_id": ids[batch][0],
+                        "question_id": int(ids[batch][0]),
                         "passage": dict_.ind2word(passage[batch]),
                         "question": dict_.ind2word(question[batch]),
-                        "socre": score[batch][0],
+                        "score": int(score[batch][0]),
                     })
-    print(res)
     with open("scores_rank.stat", "w") as f:
-        f.write("\n".join([json.dumps(r) for r in res]))
+        f.write("\n".join([json.dumps(r, ensure_ascii=False) for r in res]))
 
 
 def main():
@@ -433,7 +434,9 @@ def rank():
             for epoch in range(1, Params.num_epochs + 1):
                 if sv.should_stop(): break
                 for step in tqdm(range(model.num_batch), total = model.num_batch, ncols=70, leave=False, unit='b'):
-                    sess.run(model.train_op_p)
+                    _, g_hat, tags = sess.run(model.train_op_p, model.g_hat, model.tags)
+                    print("g_hat: ", g_hat)
+                    print("tags: ", tags)
                     if step % Params.save_steps == 0:
                         gs = sess.run(model.global_step)
                         sv.saver.save(sess, Params.logdir_rank + '/test_prank_epoch_%d_step_%d'%(gs//model.num_batch, gs%model.num_batch))
@@ -462,8 +465,8 @@ if __name__ == '__main__':
         #gen_ans()
     elif Params.mode.lower() == "gen_rank":
         print("Generate Rank Scores...")
-        #gen_prank()
-        test()
+        gen_prank()
+        #test()
     elif Params.mode.lower() == "prank":
         print("Passage Rank Train")
         rank()

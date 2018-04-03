@@ -41,15 +41,15 @@ def get_attn_params(attn_size,initializer = tf.truncated_normal_initializer):
                 "W_h_a":tf.get_variable("W_h_a",dtype = tf.float32, shape = (2 * attn_size, attn_size), initializer = initializer()),
                 "W_v_Q":tf.get_variable("W_v_Q",dtype = tf.float32, shape = (attn_size,  attn_size), initializer = initializer()),
                 "v":tf.get_variable("v",dtype = tf.float32, shape = (attn_size), initializer=initializer()),
-                #"W_v_P_3": tf.get_variable("W_v_P_3", dtype=tf.float32, shape=(2*attn_size, 2*attn_size), initializer=initializer()),
-                #"W_v_Q_2": tf.get_variable("W_v_Q_2", dtype=tf.float32, shape=(2*attn_size, 2*attn_size), initializer=initializer()),
-                #"v_2": tf.get_variable("v_2", dtype=tf.float32, shape=(2*attn_size), initializer=initializer()),
-                #"v_g": tf.get_variable("v_g", dtype=tf.float32, shape=(4*attn_size), initializer=initializer()),
-                #"W_g_2": tf.get_variable("W_g_2", dtype=tf.float32, shape=(4*attn_size, 4*attn_size), initializer=initializer()),
-                #"W_f_h": tf.get_variable("W_f_h", dtype=tf.float32, shape=(4*attn_size, 8*attn_size), initializer=initializer()),    # hidden layer weight
-                #"b_f_h": tf.get_variable("b_f_h", dtype=tf.float32, shape=(1, 8*attn_size), initializer=initializer()),  # hidden layer bias
-                #"W_f_o": tf.get_variable("W_f_o", dtype=tf.float32, shape=(8*attn_size, 1), initializer=initializer()), # output layer weight
-                #"b_f_o": tf.get_variable("b_f_o", dtype=tf.float32, shape=(1, 1), initializer=initializer()),   # output layer bias 
+                "W_v_P_3": tf.get_variable("W_v_P_3", dtype=tf.float32, shape=(2*attn_size, 2*attn_size), initializer=initializer()),
+                "W_v_Q_2": tf.get_variable("W_v_Q_2", dtype=tf.float32, shape=(2*attn_size, 2*attn_size), initializer=initializer()),
+                "v_2": tf.get_variable("v_2", dtype=tf.float32, shape=(2*attn_size), initializer=initializer()),
+                "v_g": tf.get_variable("v_g", dtype=tf.float32, shape=(4*attn_size), initializer=initializer()),
+                "W_g_2": tf.get_variable("W_g_2", dtype=tf.float32, shape=(4*attn_size, 4*attn_size), initializer=initializer()),
+                "W_f_h": tf.get_variable("W_f_h", dtype=tf.float32, shape=(4*attn_size, 8*attn_size), initializer=initializer()),    # hidden layer weight
+                "b_f_h": tf.get_variable("b_f_h", dtype=tf.float32, shape=(1, 8*attn_size), initializer=initializer()),  # hidden layer bias
+                "W_f_o": tf.get_variable("W_f_o", dtype=tf.float32, shape=(8*attn_size, 1), initializer=initializer()), # output layer weight
+                "b_f_o": tf.get_variable("b_f_o", dtype=tf.float32, shape=(1, 1), initializer=initializer()),   # output layer bias 
         }
         return params
 

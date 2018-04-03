@@ -269,7 +269,7 @@ def ljz_load_data(_file):
 
     with open(_file) as fp:
         for i, line in enumerate(fp):
-            #if i == 20000: break
+            if i == 2000: break
             #print(i)
             d = json.loads(line)
             if len(d["segmented_paragraph"]) > max_plen or len(d["segmented_question"]) > max_qlen:

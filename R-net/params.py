@@ -27,7 +27,8 @@ class Params():
     # Training
 	# NOTE: To use demo, put batch_size == 1
     #mode = "gen_rank" # case-insensitive options: ["train", "test", "debug"]
-    mode = "train"
+    mode = "prank"
+    #mode = "train"
     dropout = 0.2 # dropout probability, if None, don't use dropout
     zoneout = None # zoneout probability, if None, don't use zoneout
     optimizer = "adam" # Options: ["adadelta", "adam", "gradientdescent", "adagrad"]
@@ -53,3 +54,10 @@ class Params():
     attn_size = 75 # RNN cell and attention module size
     num_layers = 3 # Number of layers at question-passage matching
     bias = True # Use bias term in attention
+
+
+    if mode == "prank":
+        train_dir = data_dir + "tag_id_train.stat"
+        dev_dir = "tag_id_dev.stat"
+        test_dir = "rank_id.stat"
+
