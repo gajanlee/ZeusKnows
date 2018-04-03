@@ -7,6 +7,8 @@ word_emb*.npy
 *.bin
 */train/
 */rank/
+*.zip
+*.json
 # Word Embedding
 # Byte-compiled / optimized / DLL files
 __pycache__/

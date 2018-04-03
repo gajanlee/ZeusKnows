@@ -118,7 +118,7 @@ class Model(object):
             
             #self.passage_rank()
             if is_training:
-                self.p_rank_loss()
+                #self.p_rank_loss()
                 self.loss_function()
                 self.summary()
                 self.init_op = tf.global_variables_initializer()
@@ -338,14 +338,14 @@ def test():
                     EM += em
                     Bleu_4 += bleu
                     Rouge_L += rouge
-                    res.append({"question_id": int(ids[batch][0]), "passage_id": int(ids[batch][1]), "spans": list(index[batch])})
+                    res.append({"question_id": int(ids[batch][0]), "passage_id": int(ids[batch][1]), "spans": list(index[batch]), "passage": dict_.ind2word(passage[batch][0:20])})
             F1 /= float(model.num_batch * Params.batch_size)
             EM /= float(model.num_batch * Params.batch_size)
             Bleu_4 /= float(model.num_batch * Params.batch_size)
             Rouge_L /= float(model.num_batch * Params.batch_size)
             print("\nExact_match: {}\nF1_score: {}\nBleu_4_score:{}\nRouge_L_score:{}".format(EM,F1,Bleu_4,Rouge_L))
     with open("../test_res.stat", "w") as fp:
-        fp.write("\n".join([json.dumps(r) for r in res]))
+        fp.write("\n".join([json.dumps(r, ensure_ascii=False) for r in res]))
 
 def gen_prank():
     model = Model(is_training = False); print("Built model")

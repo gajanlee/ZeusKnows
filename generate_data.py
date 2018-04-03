@@ -65,7 +65,7 @@ class Writer:
         if id == True:
             self.writers_test_id.write(json.dumps(data) + "\n")
         else:
-            self.writers_test[data["question_type"]].write(json.dumps(data) + "\n")
+            self.writers_test[data["question_type"]].write(json.dumps(data, ensure_ascii=False) + "\n")
 
     def close(self, signal=0x111):
         if self.__permission(self.__TEXT_FLAG):

@@ -170,7 +170,7 @@ def load_data(dir_):
 
 def get_dev():
     print("start load dev set...")
-    devset, shapes = ljz_load_data(Params.train_dir)  #Params.dev_dir)
+    devset, shapes = ljz_load_data(Params.dev_dir)  #Params.dev_dir)
     #devset, shapes = ljz_load_data(Params.test_rank_dir)
     indices = devset[-3]
     # devset = [np.reshape(input_, shapes[i]) for i,input_ in enumerate(devset)]
@@ -265,10 +265,11 @@ def ljz_load_data(_file):
     ids = []    # question's id
 
     max_plen, max_qlen, max_clen = Params.max_p_len, Params.max_q_len, Params.max_char_len
+    print("loading data dir is ", _file)
 
     with open(_file) as fp:
         for i, line in enumerate(fp):
-            #if i == 100: break
+            #if i == 20000: break
             #print(i)
             d = json.loads(line)
             if len(d["segmented_paragraph"]) > max_plen or len(d["segmented_question"]) > max_qlen:
@@ -292,8 +293,8 @@ def ljz_load_data(_file):
             else:
                 indices.append(d["answer_spans"])
                 tags.append([0])
-            ids.append([d["question_id"], d["passage_id"]])
-
+            #ids.append([d["question_id"], d["passage_id"]])
+            ids.append([0, 0])
         # to numpy
         indices = np.reshape(np.asarray(indices,np.int32),(-1,2))
         tags = np.reshape(np.asarray(tags, np.float32), (-1, 1))
@@ -320,6 +321,4 @@ def ljz_load_data(_file):
 if __name__ == "__main__":
     a, b = get_batch()
     #print(a[6], a[7], a[8], b) 
-    print(b)
-    for x in a:
-        print(x.shape)
+    
