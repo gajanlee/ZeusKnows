@@ -110,3 +110,45 @@ class Vocabulary:
         
 
 vocabulary = Vocabulary()
+
+
+class Lookup:
+
+    info = {}
+    
+    def __init__(self):
+        """
+            We should read all passage and questionid,
+            according to tags.
+        """
+        for mode in ["yes_no", "entity", "description"]:
+            with open("{}_rank_test.stat".format(mode)) as f:
+                for line in f:
+                    data = json.loads(line)
+                    ap = {
+                        "passage_id": data["passage_id"],
+                        "question_type": data["question_type"],
+                        "segmented_paragraph": data["segmented_paragraph"]
+                    }
+                    if data["question_id"] not in self.info:
+                        self.info[data["question_id"]] = [ap]
+                    else:
+                        self.info[data["question_id"]].append(ap)
+
+    def get_all_passageID_by_questionID(self, questionID):
+        return self.info[questionID]
+
+    def get_passage_by_passageID(self, questionID, passageID):
+        for para in self.info[questionID]:
+            if passageID == para["passage_id"]:
+                return para
+        print("%s not found!!!!" % passageID)
+
+    def get_question_type_by_questionID(self, questionID):
+        return self.info[questionID]["question_type"]
+
+    def get_answer_content_by_passageID_spans(self, passageID, spans):
+
+
+        return ""
+lookup = Lookup()

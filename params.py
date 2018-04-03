@@ -22,5 +22,6 @@ class Params:
     # -----> Generate Question-Answer Data Format Configuration
 
 
+    struct_file = "./upload_res.json"
 
     

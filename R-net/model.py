@@ -346,6 +346,7 @@ def test():
             Bleu_4 /= float(model.num_batch * Params.batch_size)
             Rouge_L /= float(model.num_batch * Params.batch_size)
             print("\nExact_match: {}\nF1_score: {}\nBleu_4_score:{}\nRouge_L_score:{}".format(EM,F1,Bleu_4,Rouge_L))
+            
     with open("../test_res.stat", "w") as fp:
         fp.write("\n".join([json.dumps(r, ensure_ascii=False) for r in res]))
 
