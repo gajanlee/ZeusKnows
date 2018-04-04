@@ -2,7 +2,7 @@ from __init__ import *
 import json
 import jieba
 from bs4 import BeautifulSoup
-from multiprocess import Process
+from multiprocess import Process, Lock
 struct_file = "./upload_res.json"
 output_file = "./result.json"
 #from bleu_metric.bleu  import Bleu
@@ -123,18 +123,81 @@ writers_id = {
 
 writerT = open("total_test.stat", "w")
 # later will write document by Chinese character
-def Write_ID(data):
-    writers_id[data["question_type"]].write(json.dumps(data, ensure_ascii=False) + "\n")
-    writers_id["TOTAL"].write(json.dumps(data, ensure_ascii=False) + "\n")
-    
-def Write(data):
-    writerT.write(json.dumps(data, ensure_ascii=False) + "\n")
+def Write_ID(data, lock):
+    with lock:
+        writers_id[data["question_type"]].write(json.dumps(data, ensure_ascii=False) + "\n")
+        writers_id["TOTAL"].write(json.dumps(data, ensure_ascii=False) + "\n")
+
+count = 0
+def add_c(lock):
+    global count
+    with lock:
+        count += 1
+        if count % 10 == 0:
+            print("current_count ===> %s" % (count))
 
 
+def Write(data, lock):
+    with lock:
+        writerT.write(json.dumps(data, ensure_ascii=False) + "\n")
+import time
 def Close():
+    while count < 100:
+        time.sleep(1)
+        print("waiting end")
     for writer in writers_id.values():
         writer.close()
     writerT.close()
+
+passage_id = 0
+def get_and_inc_passage_id(p_id_lock):
+    global passage_id
+    with p_id_lock:
+        passage_id += 1
+    return passage_id
+
+def process_doc(docs, lock_id, lock_total, p_id_lock, add_lock):
+    output = []
+    for doc in docs:
+        for para in doc["segmented_paragraphs"]:
+            if para[0] == "<":
+                para = list(jieba.cut(BeautifulSoup("".join(para), "html.parser").text))
+            try:
+                output.append((match_score(line["segmented_question"], para, doc["bs_rank_pos"]), para))
+            except:
+                continue    # later we will solve the score division 0 problem
+            output.sort(key=lambda x: x[0], reverse=True)
+            #sorted(output, key=lambda x: x[0])
+            #print(output)
+            for o in output[:3]:
+                d = {
+                    "question_id": line["question_id"],
+                    "question_type": line["question_type"],
+                    "passage_id": get_and_inc_passage_id(p_id_lock),
+                    "segmented_paragraph": [vocabulary.getVocabID(v) for v in o[1]],
+                    "char_paragraph": [[vocabulary.getCharID(c) for c in v] for v in o[1]],
+                    "segmented_question": [vocabulary.getVocabID(v) for v in line["segmented_question"]],
+                    "char_question": [[vocabulary.getCharID(c) for c in v] for v in line["segmented_question"]],
+                    "score": o[0],
+                }
+                Write_ID(d, lock_id)
+                d["segmented_p"] = o[1]
+                d["segmented_q"] = line["segmented_question"]
+                Write(d, lock_total)
+    add_c(add_lock)
+
+def process():
+    lock_id, lock_total, p_id_lock, add_lock = Lock(), Lock(), Lock(), Lock()
+    with open("../DuReader/data/preprocessed/testset/zhidao.test.json") as f:
+        for i, line in enumerate(f, 1):
+            if i % 10 == 0: print("%s / %s" % (i, 30000))
+            #if i == 10: break
+            line = json.loads(line)
+            p = Process(target=process_doc, args=(line["documents"], lock_id, lock_total, p_id_lock, add_lock))
+            p.start()
+            p.join()
+            
+        Close()
 
 if __name__ == "__main__":
     
