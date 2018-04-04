@@ -2,7 +2,7 @@ from __init__ import *
 import json
 import jieba
 from bs4 import BeautifulSoup
-from multiprocess import Process, Lock
+from multiprocessing import Process, Lock, Pool, TimeoutError
 struct_file = "./upload_res.json"
 output_file = "./result.json"
 #from bleu_metric.bleu  import Bleu
@@ -97,6 +97,7 @@ def match_score(question, passage, r):
         question: a list of segmented question
         passage : list, segmented
     """
+    print("match_scores")
     count = {}
     for p in passage:
         count[p] = count.get(p, 0) + 1
@@ -143,8 +144,8 @@ def Write(data, lock):
 import time
 def Close():
     while count < 100:
-        time.sleep(1)
-        print("waiting end")
+        time.sleep(10)
+        print("waiting end ==> %s" % count)
     for writer in writers_id.values():
         writer.close()
     writerT.close()
@@ -157,9 +158,12 @@ def get_and_inc_passage_id(p_id_lock):
     return passage_id
 
 def process_doc(docs, lock_id, lock_total, p_id_lock, add_lock):
+    time.sleep(1)
+    print("fuckyou!!!")
     output = []
     for doc in docs:
         for para in doc["segmented_paragraphs"]:
+            print("running")
             if para[0] == "<":
                 para = list(jieba.cut(BeautifulSoup("".join(para), "html.parser").text))
             try:
@@ -187,23 +191,32 @@ def process_doc(docs, lock_id, lock_total, p_id_lock, add_lock):
     add_c(add_lock)
 
 def process():
+    p = Pool(processes=5)
     lock_id, lock_total, p_id_lock, add_lock = Lock(), Lock(), Lock(), Lock()
-    with open("../DuReader/data/preprocessed/testset/zhidao.test.json") as f:
+    #with open("../DuReader/data/preprocessed/testset/zhidao.test.json") as f:
+    with open("./zhi.test") as f:
         for i, line in enumerate(f, 1):
             if i % 10 == 0: print("%s / %s" % (i, 30000))
             #if i == 10: break
             line = json.loads(line)
-            p = Process(target=process_doc, args=(line["documents"], lock_id, lock_total, p_id_lock, add_lock))
-            p.start()
-            p.join()
-            
-        Close()
+            p.apply_async(process_doc, args=(line["documents"], lock_id, lock_total, p_id_lock, add_lock))
+        
+        # p.apply_async(Close)
+        #p.start() 
+        p.close()
+        p.terminate()
+        p.join()   
+        #c = Process(target=Close)
+        #c.start()
+        #c.join()
+
+        #p.apply_async(Close, ())
 
 if __name__ == "__main__":
-    
+    process() 
 
 
-    
+def x():
     passage_id = 0
     with open("../DuReader/data/preprocessed/testset/zhidao.test.json") as f:
         for i, line in enumerate(f, 1):
