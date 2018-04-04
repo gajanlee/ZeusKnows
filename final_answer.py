@@ -112,12 +112,60 @@ def gen_test():
 def test():
     return json.load(open("test.case"))
 
+
+writers = {
+    "YES_NO": open("yes_no_test.stat", "w"),
+    "ENTITY": open("entity_test.stat", "w"),
+    "DESCRIPTION": open("description_test.stat", "w"),
+    "TOTAL": open("total_test.stat", "w"),
+}
+
+def Write(data):
+    writers[data["question_type"]].write(json.dumps(data, ensure_ascii=False) + "\n")
+    writers["TOTAL"].write(json.dumps(data, ensure_ascii=False) + "\n")
+
+def Close():
+    for writer in writers:
+        writer.close()
+
 if __name__ == "__main__":
+    
+    
+    passage_id = 0
+    with open("test", ) as f:
+        for line in f:
+            output = []
+            for doc in line["documents"]:
+                for para in doc["segmented_paragraph"]:
+                    if para[0] == "<":
+                        para = list(jieba.cut(BeautifulSoup("".join(para), "html.parser").text))
+                    output.append((match_score(line["segmented_question"], para, line["bs_rank_pos"]), para))
+            print(output)
+            output.sort(key=lambda x: x[0], reverse=True)
+            #sorted(output, key=lambda x: x[0])
+            print(output)
+            for o in output[:3]:
+                Write({
+                    "question_id": line["question_id"],
+                    "question_type": line["question_type"],
+                    "passage_id": passage_id,
+                    "segmented_paragraph": [vocabulary.getVocabID(v) for v in o[1]],
+                    "char_paragraph": [[vocabulary.getCharID(c) for c in v] for v in o[1]],
+                    "segmented_question": [vocabulary.getVocabID(v) for v in line["segmented_question"]],
+                    "char_question": [[vocabulary.getCharID(c) for c in v] for v in line["segmented_question"]],
+                    "segmented_p": o[1],
+                    "segmented_q": line["segmented_question"],
+                })
+                passage_id += 1
+            break
+    Close()
+
+    """temp_ps = {}
     for q, p, r in gen_test():
         if p[0] == "<":
             p = list(jieba.cut(BeautifulSoup("".join(p), "html.parser").text))
-        print(match_score(q, p, r), "".join(p))
-
+        print(match_score(q, p, r), "".join(p))"""
+    
     #DataHandler().process_data()  
     """res = {}
     with open("./result.json") as f:

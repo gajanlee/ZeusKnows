@@ -21,9 +21,6 @@ class QPair:
         with open("test_res.stat") as f:
             for i, line in enumerate(f):
                 data = json.loads(line)
-                if data["question_id"] not in self.info:
-                    print(data["question_id"], i, data["passage_id"])
-                    continue
                 for que in self.info[data["question_id"]]:
                     if que["passage_id"] == data["passage_id"]:
                         if data["question_id"] not in self.res:
