@@ -111,16 +111,14 @@ class Vocabulary:
 
 vocabulary = Vocabulary()
 
-
+"""
 class Lookup:
 
     info = {}
     
     def __init__(self):
-        """
-            We should read all passage and questionid,
-            according to tags.
-        """
+            #We should read all passage and questionid,
+            #according to tags.
         for mode in ["yes_no", "entity", "description"]:
             with open("{}_rank_test.stat".format(mode)) as f:
                 for line in f:
@@ -151,3 +149,4 @@ class Lookup:
         return self.get_passage_by_passageID(questionID, passageID)[spans[0]: spans[1]+1]
         
 lookup = Lookup()
+"""
