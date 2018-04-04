@@ -150,4 +150,3 @@ class Lookup:
     def get_answer_content_by_passageID_spans(self, questionID, passageID, spans):
         return self.get_passage_by_passageID(questionID, passageID)[spans[0]: spans[1]+1]
         
-lookup = Lookup()

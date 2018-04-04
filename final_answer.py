@@ -3,6 +3,9 @@ from __init__ import *
 struct_file = "./upload_res.json"
 output_file = "./result.json"
 
+lookup = Lookup()
+
+idf = json.load(open("idf.stat"))
 
 class DataHandler:
     datas = {}
@@ -40,8 +43,61 @@ class DataHandler:
     def align_data(self):
         pass
 
-def match_score(question, passage):
+import word2vec, math
+model = word2vec.load("wordsVec.bin")
+
+
+def cosine(vec1, vec2):
+    """
+        vec1, vec2: two vector, no limited dimesi
+    """
+    dot_product = 0.0;  
+    normA = 0.0;  
+    normB = 0.0;  
+    for x1, x2 in zip(vec1, vec2):  
+        dot_product += x1 * x2  
+        normA += x1 ** 2  
+        normB += x2 ** 2  
+    """if normA == 0.0 or normB==0.0:  
+        return None
+    else:  """
+    return dot_product / ((normA*normB)**0.5)  
+
+def get_cos(question, passage):
+    if not (vocabulary.getVocabID(question) and vocabulary.getVocabID(passage)):
+        score = 0
+        for char_pair in product(question, passage):
+            score += (1 if char_pair[0] == char_pair[1] else -1)
+        score /= len(char_pair)
+    else:
+        cos = cosine(model.get_vector(question), model.get_vector(passage))
     
+    return (math.exp(-cos) if cos >= 0 else math.exp(cos))
+
+from itertools import product
+
+def score(question, passage, tf_idf):
+    """
+        question: a token of question, string
+        passage : a token too. string
+        tf_idf: passage token's tf_idf
+    """
+    return get_cos(question, passage) * tf_idf
+
+
+def match_score(question, passage):
+    """
+        question: a list of segmented question
+        passage : list, segmented
+    """
+    count = {}
+    for p in passage:
+        count[p] = count.get(p) + 1
+    scores = filter(lambda x: x != 0, [score(*pair, count.get(pair[0], 1) * idf.get(pair[1], math.log(article_count))) for pair in product(question, passage)])  # filter 0
+
+    return sum(scores) / len(scores)
+
+
 
 if __name__ == "__main__":
     #DataHandler().process_data()  
