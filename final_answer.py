@@ -2,6 +2,7 @@ from __init__ import *
 import json
 import jieba
 from bs4 import BeautifulSoup
+from multiprocess import Process
 struct_file = "./upload_res.json"
 output_file = "./result.json"
 #from bleu_metric.bleu  import Bleu
@@ -113,39 +114,63 @@ def test():
     return json.load(open("test.case"))
 
 
-writers = {
-    "YES_NO": open("yes_no_test.stat", "w"),
-    "ENTITY": open("entity_test.stat", "w"),
-    "DESCRIPTION": open("description_test.stat", "w"),
-    "TOTAL": open("total_test.stat", "w"),
+writers_id = {
+    "YES_NO": open("yes_no_id_test.stat", "w"),
+    "ENTITY": open("entity_id_test.stat", "w"),
+    "DESCRIPTION": open("description_id_test.stat", "w"),
+    "TOTAL": open("total_test_id.stat", "w"),
 }
 
+writerT = open("total_test.stat", "w")
+# later will write document by Chinese character
+def Write_ID(data):
+    writers_id[data["question_type"]].write(json.dumps(data, ensure_ascii=False) + "\n")
+    writers_id["TOTAL"].write(json.dumps(data, ensure_ascii=False) + "\n")
+    
 def Write(data):
-    writers[data["question_type"]].write(json.dumps(data, ensure_ascii=False) + "\n")
-    writers["TOTAL"].write(json.dumps(data, ensure_ascii=False) + "\n")
+    writerT.write(json.dumps(data, ensure_ascii=False) + "\n")
+
 
 def Close():
-    for writer in writers:
+    for writer in writers_id.values():
         writer.close()
+    writerT.close()
 
 if __name__ == "__main__":
     
+
+
     
     passage_id = 0
-    with open("test", ) as f:
-        for line in f:
+    with open("../DuReader/data/preprocessed/testset/zhidao.test.json") as f:
+        for i, line in enumerate(f, 1):
+            if i % 10 == 0: print("%s / %s" % (i, 30000))
+            #if i == 10: break
+            line = json.loads(line)
             output = []
             for doc in line["documents"]:
-                for para in doc["segmented_paragraph"]:
+                for para in doc["segmented_paragraphs"]:
                     if para[0] == "<":
                         para = list(jieba.cut(BeautifulSoup("".join(para), "html.parser").text))
-                    output.append((match_score(line["segmented_question"], para, line["bs_rank_pos"]), para))
-            print(output)
+                    try:
+                        output.append((match_score(line["segmented_question"], para, doc["bs_rank_pos"]), para))
+                    except:
+                        continue    # later we will solve the score division 0 problem
+            """
+                Traceback (most recent call last):
+  File "final_answer.py", line 147, in <module>
+    output.append((match_score(line["segmented_question"], para, doc["bs_rank_pos"]), para))
+  File "final_answer.py", line 104, in match_score
+    return sum(scores) / len(scores) * (1/r)
+ZeroDivisionError: division by zero
+
+            """
+            #print(output)
             output.sort(key=lambda x: x[0], reverse=True)
             #sorted(output, key=lambda x: x[0])
-            print(output)
+            #print(output)
             for o in output[:3]:
-                Write({
+                d = {
                     "question_id": line["question_id"],
                     "question_type": line["question_type"],
                     "passage_id": passage_id,
@@ -153,11 +178,13 @@ if __name__ == "__main__":
                     "char_paragraph": [[vocabulary.getCharID(c) for c in v] for v in o[1]],
                     "segmented_question": [vocabulary.getVocabID(v) for v in line["segmented_question"]],
                     "char_question": [[vocabulary.getCharID(c) for c in v] for v in line["segmented_question"]],
-                    "segmented_p": o[1],
-                    "segmented_q": line["segmented_question"],
-                })
+                    "score": o[0],
+                }
+                Write_ID(d)
+                d["segmented_p"] = o[1]
+                d["segmented_q"] = line["segmented_question"]
+                Write(d)
                 passage_id += 1
-            break
     Close()
 
     """temp_ps = {}
