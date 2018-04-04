@@ -92,8 +92,13 @@ class Writer:
         if self.mode == "test":
             return
         if not data_json["match_scores"]: return
+        
         answer_spans = data_json["answer_spans"][0] # Actually it only ones
-        doc = data_json["documents"][data_json["answer_docs"][0]]
+        try:
+            doc = data_json["documents"][data_json["answer_docs"][0]]
+        except:
+            print(i)
+            return
         base_format = {
             "question_type": data_json["question_type"],    # YES_NO / ENTITY / DESCRIPTION$
             "question_id": data_json["question_id"],        # ID(int)$
@@ -104,10 +109,15 @@ class Writer:
         
 
         base_format["segmented_paragraph"] = doc["segmented_paragraphs"][doc["most_related_para"]]
-        base_format["segmented_answer"] = base_format["segmented_paragraph"][answer_spans[0]:answer_spans[1]]
+        base_format["segmented_answer"] = base_format["segmented_paragraph"][answer_spans[0]:answer_spans[1]+1]
         base_format["segmented_question"] = data_json["segmented_question"]
         base_format["char_paragraph"] = [vocabulary.getCharID(word, True) for word in base_format["segmented_paragraph"]]
         base_format["char_question"] = [vocabulary.getCharID(word, True) for word in base_format["segmented_question"]]
+        
+        if "".join(base_format["segmented_answer"]) != data_json["fake_answers"][0]:
+            print(i, "".join(base_format["segmented_answer"]))
+            print(data_json["fake_answers"][0])
+            return
         self.write(base_format)
         base_format["segmented_paragraph"] = [vocabulary.getVocabID(id) for id in base_format["segmented_paragraph"]]
         base_format["segmented_answer"] = [vocabulary.getVocabID(id) for id in base_format["segmented_answer"]]
@@ -153,7 +163,7 @@ class Writer:
 tp = "zhidao"   #"search"
 
 def train():
-    with Writer("train", tp, 0x001) as wt, Writer("dev", tp, 0x001) as wd:
+    with Writer("train", tp, 0x110) as wt, Writer("dev", tp, 0x110) as wd:
         logger.info("Start process trainset...")
         wt.preprocess()
         logger.info("Start process devset...")
@@ -165,4 +175,4 @@ def test():
 
 if __name__ == "__main__":
     train()
-    test()
+    #test()

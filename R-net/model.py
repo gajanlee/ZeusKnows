@@ -108,17 +108,19 @@ class Model(object):
                 
             self.passage_w_len = tf.squeeze(self.passage_w_len_, -1)
             self.question_w_len = tf.squeeze(self.question_w_len_, -1)
-
-            self.encode_ids()
-            self.params = get_attn_params(Params.attn_size, initializer = tf.contrib.layers.xavier_initializer)
-            self.attention_match_rnn()
-            self.bidirectional_readout()
-            self.pointer_network()
+            
+            with tf.device("/gpu:0"):
+                self.encode_ids()
+                self.params = get_attn_params(Params.attn_size, initializer = tf.contrib.layers.xavier_initializer)
+            with tf.device("/gpu:1"):
+                self.attention_match_rnn()
+                self.bidirectional_readout()
+                self.pointer_network()
             self.outputs()
             
-            self.passage_rank()
+            #self.passage_rank()
             if is_training:
-                self.p_rank_loss()
+                #self.p_rank_loss()
                 self.loss_function()
                 self.summary()
                 self.init_op = tf.global_variables_initializer()
@@ -314,7 +316,7 @@ class Model(object):
         tf.summary.scalar("F1_Score",self.F1)
         tf.summary.scalar("Exact_Match",self.EM)
         tf.summary.scalar('learning_rate', Params.opt_arg[Params.optimizer]['learning_rate'])
-        tf.summary.scalar('rank_loss', self.mean_loss_p)
+        #tf.summary.scalar('rank_loss', self.mean_loss_p)
         # tf.summary.histogram('g_hat', self.g_hat)
         self.merged = tf.summary.merge_all()
 

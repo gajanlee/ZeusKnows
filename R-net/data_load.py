@@ -269,8 +269,10 @@ def ljz_load_data(_file):
 
     with open(_file) as fp:
         for i, line in enumerate(fp):
-            if i == 2000: break
+            #if i == 2000: break
             #print(i)
+            if i % 10000 == 0:
+                print("data loading %s line" % i)
             d = json.loads(line)
             if len(d["segmented_paragraph"]) > max_plen or len(d["segmented_question"]) > max_qlen:
                 #print(len(d["segmented_paragraph"]), len(d["segmented_question"]))
@@ -291,7 +293,7 @@ def ljz_load_data(_file):
                 indices.append([0, 0])
                 tags.append([0])
             else:
-                indices.append(d["answer_spans"])
+                indices.append([d["answer_spans"][0][0], d["answer_spans"][0][1]+1])
                 tags.append([0])
             #ids.append([d["question_id"], d["passage_id"]])
             ids.append([0, 0])

@@ -4,14 +4,14 @@ class Params():
     data_size = -1 # -1 to use all data
     num_epochs = 10
     train_prop = 0.9 # Not implemented atm
-    data_dir = "../"
-    train_dir = data_dir + "yes_no_id_train.stat"
-    dev_dir = data_dir + "yes_no_id_dev.stat"
+    data_dir = "../train/"
+    train_dir = data_dir + "description_id_train.stat"
+    dev_dir = data_dir + "description_id_dev.stat"
     test_rank_dir = data_dir + "rank_id.stat"
     #train_dir = data_dir + "entity_id_train.stat"
     #dev_dir = data_dir + "entity_id_dev.stat"
     #logdir = "./train/train"
-    logdir = "./train/yes_no"
+    logdir = "./train/description"
     logdir_rank = "./rank/train"
     glove_dir = "./glove.840B.300d.txt" # Glove file name (If you want to use your own glove, replace the file name here)
     glove_char = "./glove.840B.300d.char.txt" # Character Glove file name
@@ -27,7 +27,7 @@ class Params():
     # Training
 	# NOTE: To use demo, put batch_size == 1
     #mode = "gen_rank" # case-insensitive options: ["train", "test", "debug"]
-    mode = "prank"
+    mode = "train"
     #mode = "train"
     dropout = 0.2 # dropout probability, if None, don't use dropout
     zoneout = None # zoneout probability, if None, don't use zoneout
