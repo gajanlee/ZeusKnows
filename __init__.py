@@ -117,8 +117,8 @@ class Lookup:
     info = {}
     
     def __init__(self):
-            We should read all passage and questionid,
-            according to tags.
+        """We should read all passage and questionid,
+            according to tags."""
         for mode in ["yes_no", "entity", "description"]:
             with open("{}_rank_test.stat".format(mode)) as f:
                 for line in f:
