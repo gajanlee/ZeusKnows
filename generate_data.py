@@ -8,20 +8,20 @@ class Writer:
     # multiple permission writer and created
     __TEXT_FLAG, __TEXT_ID_FLAG, __TEXT_WELL_FLAG, __TEXT_TEST_FLAG = 0x100, 0x010, 0x001, 0x002
 
-    def __init__(self, mode, save_mode=0x113):
-        self.mode = mode; self.save_mode = save_mode
+    def __init__(self, mode, tp, save_mode=0x113):
+        self.mode = mode; self.type = tp; self.save_mode = save_mode
         
         self.passage_id = 0
         if self.__permission(self.__TEXT_FLAG):
             self.writers = {
-                "DESCRIPTION": open("description_{}.stat".format(mode), "w"),
-                "YES_NO": open("yes_no_{}.stat".format(mode), "w"),
-                "ENTITY": open("entity_{}.stat".format(mode), "w"),}
+                "DESCRIPTION": open("train/description_{}.stat".format(mode), "w"),
+                "YES_NO": open("train/yes_no_{}.stat".format(mode), "w"),
+                "ENTITY": open("train/entity_{}.stat".format(mode), "w"),}
         if self.__permission(self.__TEXT_ID_FLAG):        
             self.writers_id = {
-                "DESCRIPTION": open("description_id_{}.stat".format(mode), "w"),
-                "YES_NO": open("yes_no_id_{}.stat".format(mode), "w"),
-                "ENTITY": open("entity_id_{}.stat".format(mode), "w"),}
+                "DESCRIPTION": open("train/description_id_{}.stat".format(mode), "w"),
+                "YES_NO": open("train/yes_no_id_{}.stat".format(mode), "w"),
+                "ENTITY": open("train/entity_id_{}.stat".format(mode), "w"),}
         if self.__permission(self.__TEXT_WELL_FLAG):
             self.writers_format = {
                 "DESCRIPTION": open("description_wellformat_{}.stat".format(mode), "w"),
@@ -29,10 +29,10 @@ class Writer:
                 "ENTITY": open("entity_wellformat_{}.stat".format(mode), "w"),}
         if self.__permission(self.__TEXT_TEST_FLAG):    # generate test data format
             self.writers_test = {
-                "DESCRIPTION": open("description_rank_{}.stat".format(mode), "w"),
-                "YES_NO": open("yes_no_rank_{}.stat".format(mode), "w"),
-                "ENTITY": open("entity_rank_{}.stat".format(mode), "w"),}
-            self.writers_test_id = open("rank_id.stat", "w")
+                "DESCRIPTION": open("test/description_{}.stat".format(mode), "w"),
+                "YES_NO": open("test/yes_no_{}.stat".format(mode), "w"),
+                "ENTITY": open("test/entity_{}.stat".format(mode), "w"),}
+            self.writers_test_id = open("/test_id.stat", "w")
        
         
         #self.train_stat_writer = open("dev_stat.info", "w")
@@ -79,7 +79,7 @@ class Writer:
             self.writers_test_id.close()
 
     def preprocess(self):
-        with open(Params.data_files_format.format(mode=self.mode)) as fp:
+        with open(Params.data_files_format.format(mode=self.mode, type=self.type)) as fp:
             if self.mode == "test":
                 [self.test_process(json.loads(line), i) for i, line in enumerate(fp)]
                 #[self.test_process(json.loads(line), i) for i, line in enumerate(fp)]
@@ -150,12 +150,19 @@ class Writer:
     def __exit__(self, *exc_info):
         self.close(self.__TEXT_WELL_FLAG)
 
-if __name__ == "__main__":
-    with Writer("test", 0x002) as wt:
-        wt.preprocess()
+tp = "zhidao"   #"search"
 
-    """with Writer("train", 0x001) as wt, Writer("dev", 0x001) as wd:
+def train():
+    with Writer("train", tp, 0x001) as wt, Writer("dev", tp, 0x001) as wd:
         logger.info("Start process trainset...")
         wt.preprocess()
         logger.info("Start process devset...")
-        wd.preprocess()"""
+        wd.preprocess()
+
+def test():
+    with Writer("test", tp, 0x002) as wt:
+        wt.preprocess()
+
+if __name__ == "__main__":
+    train()
+    test()

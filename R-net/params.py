@@ -44,13 +44,13 @@ class Params():
 
     # Architecture
     SRU = True # Use SRU cell, if False, use standard GRU cell
-    max_p_len = 300 #300 # Maximum number of words in each passage context
+    max_p_len = 500 #300 # Maximum number of words in each passage context
     max_q_len = 20 #30 # Maximum number of words in each question context
     max_char_len = 5 #16 # Maximum number of characters in a word
     vocab_size = 556192 #91604 # Number of vocabs in glove.840B.300d.txt + 1 for an unknown token
     char_vocab_size = 9000 #95 # Number of characters in glove.840B.300d.char.txt + 1 for an unknown character
     emb_size = 300 # Embeddings size for words
-    char_emb_size = 20 #8 # Embeddings size for characters
+    char_emb_size = 30 #8 # Embeddings size for characters
     attn_size = 75 # RNN cell and attention module size
     num_layers = 3 # Number of layers at question-passage matching
     bias = True # Use bias term in attention

@@ -147,8 +147,7 @@ class Lookup:
     def get_question_type_by_questionID(self, questionID):
         return self.info[questionID]["question_type"]
 
-    def get_answer_content_by_passageID_spans(self, passageID, spans):
-
-
-        return ""
+    def get_answer_content_by_passageID_spans(self, questionID, passageID, spans):
+        return self.get_passage_by_passageID(questionID, passageID)[spans[0]: spans[1]+1]
+        
 lookup = Lookup()
