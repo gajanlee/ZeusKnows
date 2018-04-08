@@ -269,7 +269,7 @@ def ljz_load_data(_file):
 
     with open(_file) as fp:
         for i, line in enumerate(fp):
-            #if i == 2000: break
+            #if i == 200: break
             #print(i)
             if i % 10000 == 0:
                 print("data loading %s line" % i)
@@ -289,15 +289,17 @@ def ljz_load_data(_file):
             if Params.mode.lower() == "prank":
                 indices.append([0, 0])
                 tags.append(d["tag"])
-            elif Params.mode.lower() == "gen_rank":
+            elif Params.mode.lower() == "gen_rank" or Params.mode == "test":
                 indices.append([0, 0])
                 tags.append([0])
             else:
                 indices.append([d["answer_spans"][0][0], d["answer_spans"][0][1]+1])
                 tags.append([0])
-            #ids.append([d["question_id"], d["passage_id"]])
-            ids.append([0, 0])
+            ids.append([d["question_id"], d["passage_id"]])
+            #ids.append([0, 0])
         # to numpy
+        
+        
         indices = np.reshape(np.asarray(indices,np.int32),(-1,2))
         tags = np.reshape(np.asarray(tags, np.float32), (-1, 1))
         ids = np.reshape(np.asarray(ids, np.int32), (-1, 2))

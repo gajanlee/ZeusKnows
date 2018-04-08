@@ -11,6 +11,7 @@ word_emb*.npy
 *.json
 *.dat
 search/
+match/
 # Word Embedding
 # Byte-compiled / optimized / DLL files
 __pycache__/

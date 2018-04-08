@@ -105,8 +105,8 @@ def match_score_p(question, passage, r):
 
     return sum(scores) / len(scores) * (1/(r+1))
 
-
-writerT = open("search/total_test.stat", "w")
+mode = "zhidao"
+writerT = open("match/{}_total.stat".format(mode), "w")
 
 def Write(data):
     writerT.write(json.dumps(data, ensure_ascii=False) + "\n")
@@ -142,9 +142,14 @@ def entity_match(question, paras, title):
         scores[i] *= _match(title, question)
     return scores
 
+from functools import reduce
+def extend(x1, x2):
+    x1.extend(x2)
+    return x1
+
 def process():
-    passage_id = 0
-    with open("./search.test.json") as f:
+    passage_id = 0; count = 0
+    with open("./{}.test1.json".format(mode)) as f:
         for i, line in enumerate(f, 1):
             
             if i % 10 == 0: logger.info("%s / %s" % (i, 30000))
@@ -153,18 +158,23 @@ def process():
             line = json.loads(line)
             for doc in line["documents"]:
                 output = []
-                for para in doc["segmented_paragraphs"]:
+                if mode == "search":
+                    #para = reduce(extend, doc["segmented_paragraphs"])
+                    para = list(jieba.cut("".join(doc["paragraphs"]).replace(" ", "")))
+                    output = [(1, para)]
+                else:
+                    for para in doc["segmented_paragraphs"]:
                     
-                    if len(para) == 0: continue
-                    if para[0] == "<":
-                        para = list(jieba.cut(BeautifulSoup("".join(para), "html.parser").text))
-                    if len(para) == 0: continue
-                    if len(para) > 500: continue
-                    output.append((match_score(line["segmented_question"], para, doc["title"]), para))
+                        if len(para) == 0: continue
+                        if para[0] == "<":
+                            para = list(jieba.cut(BeautifulSoup("".join(para), "html.parser").text))
+                        if len(para) == 0: continue
+                        #if len(para) > 500: continue
+                        output.append((match_score(line["segmented_question"], para, doc["title"]), para))
 
                 output.sort(key=lambda x: x[0], reverse=True)
                 #sorted(output, key=lambda x: x[0])
-                print(output)
+                #print(output)
                 for o in output[:1]:
                     d = {
                         "question_id": line["question_id"],
@@ -175,12 +185,14 @@ def process():
                         "segmented_question": [vocabulary.getVocabID(v) for v in line["segmented_question"]],
                         "char_question": [[vocabulary.getCharID(c) for c in v] for v in line["segmented_question"]],
                         "score": o[0],
-                }
-                #Write_ID(d)
-                d["segmented_p"] = o[1]
-                d["segmented_q"] = line["segmented_question"]
-                Write(d)
-                passage_id += 1
+                    }
+                    #Write_ID(d)
+                    d["segmented_p"] = o[1]
+                    d["segmented_q"] = line["segmented_question"]
+                    if len(o[1]) > 500: count += 1
+                    Write(d)
+                    passage_id += 1
+    print("Over 500 words passage count is %s/%s" % (count, passage_id))
     Close()
 def gen_test():
     for doc in test()["documents"]:
@@ -191,7 +203,7 @@ def test():
     return json.load(open("test.case"))
 
 if __name__ == "__main__":
-    preprocess()
+    process()
     #for doc in test()["documents"]:
         #print(entity_match(test()["question"], doc["segmented_paragraphs"], doc["title"]))
         #print(match_score(q, p ,t), p)
