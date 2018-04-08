@@ -1,4 +1,4 @@
-#from __init__ import *
+from __init__ import *
 import json
 import jieba
 from bs4 import BeautifulSoup
@@ -11,8 +11,9 @@ from rouge_metric.rouge import Rouge
 
 # lookup = Lookup()
 
-idf = json.load(open("idf.stat"))
-article_count = 1294232
+
+#idf = json.load(open("idf.stat"))
+#article_count = 1294232
 
 class DataHandler:
     datas = {}
@@ -143,7 +144,7 @@ def entity_match(question, paras, title):
 
 def process():
     passage_id = 0
-    with open("./search.test.json3") as f:
+    with open("./search.test.json") as f:
         for i, line in enumerate(f, 1):
             
             if i % 10 == 0: logger.info("%s / %s" % (i, 30000))
@@ -164,16 +165,16 @@ def process():
                 output.sort(key=lambda x: x[0], reverse=True)
                 #sorted(output, key=lambda x: x[0])
                 print(output)
-                for o in output[:3]:
+                for o in output[:1]:
                     d = {
                         "question_id": line["question_id"],
                         "question_type": line["question_type"],
                         "passage_id": passage_id,
                         "segmented_paragraph": [vocabulary.getVocabID(v) for v in o[1]],
                         "char_paragraph": [[vocabulary.getCharID(c) for c in v] for v in o[1]],
-                    "segmented_question": [vocabulary.getVocabID(v) for v in line["segmented_question"]],
-                    "char_question": [[vocabulary.getCharID(c) for c in v] for v in line["segmented_question"]],
-                    "score": o[0],
+                        "segmented_question": [vocabulary.getVocabID(v) for v in line["segmented_question"]],
+                        "char_question": [[vocabulary.getCharID(c) for c in v] for v in line["segmented_question"]],
+                        "score": o[0],
                 }
                 #Write_ID(d)
                 d["segmented_p"] = o[1]
@@ -190,7 +191,8 @@ def test():
     return json.load(open("test.case"))
 
 if __name__ == "__main__":
-    for doc in test()["documents"]:
-        print(entity_match(test()["question"], doc["segmented_paragraphs"], doc["title"]))
+    preprocess()
+    #for doc in test()["documents"]:
+        #print(entity_match(test()["question"], doc["segmented_paragraphs"], doc["title"]))
         #print(match_score(q, p ,t), p)
 
