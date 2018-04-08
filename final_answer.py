@@ -92,7 +92,7 @@ def score(question, passage, tf_idf):
     return get_cos(question, passage) * tf_idf
 
 
-def match_score(question, passage, r):
+def match_score_p(question, passage, r):
     """
         question: a list of segmented question
         passage : list, segmented
@@ -104,119 +104,34 @@ def match_score(question, passage, r):
 
     return sum(scores) / len(scores) * (1/(r+1))
 
-def gen_test():
-    for doc in test()["documents"]:
-        for para in doc["segmented_paragraphs"]:
-            yield test()["segmented_question"], para, doc["bs_rank_pos"]
 
-
-def test():
-    return json.load(open("test.case"))
-
-
-"""writers_id = {
-    "YES_NO": open("./search/yes_no_id_test.stat", "w"),
-    "ENTITY": open("search/entity_id_test.stat", "w"),
-    "DESCRIPTION": open("search/description_id_test.stat", "w"),
-    "TOTAL": open("search/total_test_id.stat", "w"),
-}"""
-
-writerT = open("search/total_test3.stat", "w")
-# later will write document by Chinese character
-def Write_ID(data):
-    #print(data)
-    #with lock:
-    writers_id[data["question_type"]].write(json.dumps(data, ensure_ascii=False) + "\n")
-    writers_id["TOTAL"].write(json.dumps(data, ensure_ascii=False) + "\n")
-
-count = 0
-def add_c(lock):
-    global count
-    with lock:
-        count += 1
-        if count % 10 == 0:
-            print("current_count ===> %s" % (count))
-
+writerT = open("search/total_test.stat", "w")
 
 def Write(data):
-    #with lock:
     writerT.write(json.dumps(data, ensure_ascii=False) + "\n")
-import time
+
 def Close():
-    """while count < 100:
-        time.sleep(10)
-        print("waiting end ==> %s" % count)"""
-    for writer in writers_id.values():
-        writer.close()
     writerT.close()
 
-passage_id = 0
-def get_and_inc_passage_id(p_id_lock):
-    global passage_id
-    with p_id_lock:
-        passage_id += 1
-    return passage_id
 
-def process_doc(docs, lock_id, lock_total, p_id_lock, add_lock):
-    time.sleep(1)
-    print("fuckyou!!!")
-    output = []
-    for doc in docs:
-        for para in doc["segmented_paragraphs"]:
-            print("running")
-            if para[0] == "<":
-                para = list(jieba.cut(BeautifulSoup("".join(para), "html.parser").text))
-            try:
-                output.append((match_score(line["segmented_question"], para, doc["bs_rank_pos"]), para))
-            except:
-                continue    # later we will solve the score division 0 problem
-            output.sort(key=lambda x: x[0], reverse=True)
-            #sorted(output, key=lambda x: x[0])
-            #print(output)
-            for o in output[:3]:
-                d = {
-                    "question_id": line["question_id"],
-                    "question_type": line["question_type"],
-                    "passage_id": get_and_inc_passage_id(p_id_lock),
-                    "segmented_paragraph": [vocabulary.getVocabID(v) for v in o[1]],
-                    "char_paragraph": [[vocabulary.getCharID(c) for c in v] for v in o[1]],
-                    "segmented_question": [vocabulary.getVocabID(v) for v in line["segmented_question"]],
-                    "char_question": [[vocabulary.getCharID(c) for c in v] for v in line["segmented_question"]],
-                    "score": o[0],
-                }
-                Write_ID(d, lock_id)
-                d["segmented_p"] = o[1]
-                d["segmented_q"] = line["segmented_question"]
-                Write(d, lock_total)
-    add_c(add_lock)
+from collections import Counter
+def _match(can, ref):
+    """
+        candidate is para / title
+        ref is question / question
+    """
+    return sum((Counter(can) & Counter(ref)).values()) / len(ref)
+
+def match_score(question, para, title):
+    """
+        question and title's match_score as weight
+        question and para's match_score * weigth as return score
+    """
+    weight = _match(title, question)
+    return weight * _match(question, para)
+
 
 def process():
-    p = Pool(processes=5)
-    lock_id, lock_total, p_id_lock, add_lock = Lock(), Lock(), Lock(), Lock()
-    #with open("../DuReader/data/preprocessed/testset/zhidao.test.json") as f:
-    with open("./zhi.test") as f:
-        for i, line in enumerate(f, 1):
-            if i % 10 == 0: print("%s / %s" % (i, 30000))
-            #if i == 10: break
-            line = json.loads(line)
-            p.apply_async(process_doc, args=(line["documents"], lock_id, lock_total, p_id_lock, add_lock))
-        
-        # p.apply_async(Close)
-        #p.start() 
-        p.close()
-        p.terminate()
-        p.join()   
-        #c = Process(target=Close)
-        #c.start()
-        #c.join()
-
-        #p.apply_async(Close, ())
-
-if __name__ == "__main__":
-    #process() 
-
-
-#def x():
     passage_id = 0
     with open("./search.test.json3") as f:
         for i, line in enumerate(f, 1):
@@ -234,24 +149,11 @@ if __name__ == "__main__":
                         para = list(jieba.cut(BeautifulSoup("".join(para), "html.parser").text))
                     if len(para) == 0: continue
                     if len(para) > 500: continue
-                    output.append((match_score(line["segmented_question"], para, doc["bs_rank_pos"]), para))
-                    try:
-                        pass
-                    except:
-                        continue    # later we will solve the score division 0 problem
-            """
-                Traceback (most recent call last):
-  File "final_answer.py", line 147, in <module>
-    output.append((match_score(line["segmented_question"], para, doc["bs_rank_pos"]), para))
-  File "final_answer.py", line 104, in match_score
-    return sum(scores) / len(scores) * (1/r)
-ZeroDivisionError: division by zero
+                    output.append((match_score(line["segmented_question"], para, doc["title"]), para))
 
-            """
-            #print(output)
             output.sort(key=lambda x: x[0], reverse=True)
             #sorted(output, key=lambda x: x[0])
-            #print(output)
+            print(output)
             for o in output[:3]:
                 d = {
                     "question_id": line["question_id"],
@@ -270,23 +172,15 @@ ZeroDivisionError: division by zero
                 passage_id += 1
     Close()
 
-    """temp_ps = {}
-    for q, p, r in gen_test():
-        if p[0] == "<":
-            p = list(jieba.cut(BeautifulSoup("".join(p), "html.parser").text))
-        print(match_score(q, p, r), "".join(p))"""
-    
-    #DataHandler().process_data()  
-    """res = {}
-    with open("./result.json") as f:
-        for line in f:
-            d = json.loads(line)
-            if d["question_id"] in res:
-                res[d["question_id"]]["answers"].append(d["answers"][0])
-            else:
-                res[d["question_id"]] = d
 
-    with open("result2.json", "w") as f:
-        for r in res.values():
-            f.write(json.dumps(r, ensure_ascii=False) + "\n")"""
+if __name__ == "__main__":
+    for q, p, t in  gen_test():
+        print(match_score(q, p ,t), p)
 
+def gen_test():
+    for doc in test()["documents"]:
+        for para in doc["segmented_paragraphs"]:
+            yield test()["segmented_question"], para, doc["title"]
+
+def test():
+    return json.load(open("test.case"))
