@@ -6,14 +6,14 @@ class Params():
     train_prop = 0.9 # Not implemented atm
     data_dir = "../train/"
     
-    tp = "yes_no"
+    tp = "entity"
     train_dir = data_dir + "{}_id_train.stat".format(tp)
     dev_dir = data_dir + "{}_id_dev.stat".format(tp)
     test_rank_dir = data_dir + "rank_id.stat"
     #train_dir = data_dir + "entity_id_train.stat"
     #dev_dir = data_dir + "entity_id_dev.stat"
     #logdir = "./train/train"
-    logdir = "./train/{}".format(tp)
+    logdir = "./train/description"
     outputdir = "../res/{}_res.stat".format(tp)
     logdir_rank = "./rank/train"
     glove_dir = "./glove.840B.300d.txt" # Glove file name (If you want to use your own glove, replace the file name here)

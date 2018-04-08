@@ -1,4 +1,4 @@
-from __init__ import *
+#from __init__ import *
 import json
 import jieba
 from bs4 import BeautifulSoup
@@ -51,7 +51,7 @@ class DataHandler:
         pass
 
 import word2vec, math
-model = word2vec.load("wordsVec.bin")
+#model = word2vec.load("wordsVec.bin")
 
 def cosine(vec1, vec2):
     """
@@ -128,8 +128,18 @@ def match_score(question, para, title):
         question and para's match_score * weigth as return score
     """
     weight = _match(title, question)
-    return weight * _match(question, para)
+    return weight * _match(para, question)
 
+
+def entity_match(question, paras, title):
+    if len(paras) == 1: return _match(paras[0], title)
+    scores = [0]*len(paras)
+    for i, pm in enumerate(paras):
+        for j, ps in enumerate(paras):
+            if i == j: continue
+            scores[i] += _match(ps, pm)
+        scores[i] *= _match(title, question)
+    return scores
 
 def process():
     passage_id = 0
@@ -140,8 +150,8 @@ def process():
             #print(i)
             #if i == 10: break
             line = json.loads(line)
-            output = []
             for doc in line["documents"]:
+                output = []
                 for para in doc["segmented_paragraphs"]:
                     
                     if len(para) == 0: continue
@@ -151,16 +161,16 @@ def process():
                     if len(para) > 500: continue
                     output.append((match_score(line["segmented_question"], para, doc["title"]), para))
 
-            output.sort(key=lambda x: x[0], reverse=True)
-            #sorted(output, key=lambda x: x[0])
-            print(output)
-            for o in output[:3]:
-                d = {
-                    "question_id": line["question_id"],
-                    "question_type": line["question_type"],
-                    "passage_id": passage_id,
-                    "segmented_paragraph": [vocabulary.getVocabID(v) for v in o[1]],
-                    "char_paragraph": [[vocabulary.getCharID(c) for c in v] for v in o[1]],
+                output.sort(key=lambda x: x[0], reverse=True)
+                #sorted(output, key=lambda x: x[0])
+                print(output)
+                for o in output[:3]:
+                    d = {
+                        "question_id": line["question_id"],
+                        "question_type": line["question_type"],
+                        "passage_id": passage_id,
+                        "segmented_paragraph": [vocabulary.getVocabID(v) for v in o[1]],
+                        "char_paragraph": [[vocabulary.getCharID(c) for c in v] for v in o[1]],
                     "segmented_question": [vocabulary.getVocabID(v) for v in line["segmented_question"]],
                     "char_question": [[vocabulary.getCharID(c) for c in v] for v in line["segmented_question"]],
                     "score": o[0],
@@ -171,12 +181,6 @@ def process():
                 Write(d)
                 passage_id += 1
     Close()
-
-
-if __name__ == "__main__":
-    for q, p, t in  gen_test():
-        print(match_score(q, p ,t), p)
-
 def gen_test():
     for doc in test()["documents"]:
         for para in doc["segmented_paragraphs"]:
@@ -184,3 +188,9 @@ def gen_test():
 
 def test():
     return json.load(open("test.case"))
+
+if __name__ == "__main__":
+    for doc in test()["documents"]:
+        print(entity_match(test()["question"], doc["segmented_paragraphs"], doc["title"]))
+        #print(match_score(q, p ,t), p)
+
