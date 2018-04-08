@@ -7,10 +7,13 @@ writer = open("result.json", "w")
 #print(lookup["301121"]["paragraphs"]["58075"])
 output = {}
 output_h = {}
-for tp in ["yes_no", "entity", "description"]:
-    with open("../res/{}_test_res.stat".format(tp)) as fp:
+#for tp in ["yes_no", "entity", "description"]:
+for _ in range(1):
+#    with open("../res/{}_test_res.stat".format(tp)) as fp:
+    with open("") as fp:
         for u, line in enumerate(fp, 1):
             data = json.loads(line)
+
             s1, s2 = data["spans"]
             if s1 == s2: continue
             if "".join(lookup[str(data["question_id"])]["paragraphs"][str(data["passage_id"])][s1: s2]) in ["。", "."]: continue
