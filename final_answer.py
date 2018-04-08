@@ -97,13 +97,12 @@ def match_score(question, passage, r):
         question: a list of segmented question
         passage : list, segmented
     """
-    print("match_scores")
     count = {}
     for p in passage:
         count[p] = count.get(p, 0) + 1
     scores = list(filter(lambda x: x != 0, [score(q, p, count.get(q, 1) * math.log(article_count / idf.get(p, 1))) for q, p in product(question, passage)]))  # filter 0
 
-    return sum(scores) / len(scores) * (1/r)
+    return sum(scores) / len(scores) * (1/(r+1))
 
 def gen_test():
     for doc in test()["documents"]:
@@ -115,19 +114,20 @@ def test():
     return json.load(open("test.case"))
 
 
-writers_id = {
-    "YES_NO": open("yes_no_id_test.stat", "w"),
-    "ENTITY": open("entity_id_test.stat", "w"),
-    "DESCRIPTION": open("description_id_test.stat", "w"),
-    "TOTAL": open("total_test_id.stat", "w"),
-}
+"""writers_id = {
+    "YES_NO": open("./search/yes_no_id_test.stat", "w"),
+    "ENTITY": open("search/entity_id_test.stat", "w"),
+    "DESCRIPTION": open("search/description_id_test.stat", "w"),
+    "TOTAL": open("search/total_test_id.stat", "w"),
+}"""
 
-writerT = open("total_test.stat", "w")
+writerT = open("search/total_test3.stat", "w")
 # later will write document by Chinese character
-def Write_ID(data, lock):
-    with lock:
-        writers_id[data["question_type"]].write(json.dumps(data, ensure_ascii=False) + "\n")
-        writers_id["TOTAL"].write(json.dumps(data, ensure_ascii=False) + "\n")
+def Write_ID(data):
+    #print(data)
+    #with lock:
+    writers_id[data["question_type"]].write(json.dumps(data, ensure_ascii=False) + "\n")
+    writers_id["TOTAL"].write(json.dumps(data, ensure_ascii=False) + "\n")
 
 count = 0
 def add_c(lock):
@@ -138,14 +138,14 @@ def add_c(lock):
             print("current_count ===> %s" % (count))
 
 
-def Write(data, lock):
-    with lock:
-        writerT.write(json.dumps(data, ensure_ascii=False) + "\n")
+def Write(data):
+    #with lock:
+    writerT.write(json.dumps(data, ensure_ascii=False) + "\n")
 import time
 def Close():
-    while count < 100:
+    """while count < 100:
         time.sleep(10)
-        print("waiting end ==> %s" % count)
+        print("waiting end ==> %s" % count)"""
     for writer in writers_id.values():
         writer.close()
     writerT.close()
@@ -213,23 +213,30 @@ def process():
         #p.apply_async(Close, ())
 
 if __name__ == "__main__":
-    process() 
+    #process() 
 
 
-def x():
+#def x():
     passage_id = 0
-    with open("../DuReader/data/preprocessed/testset/zhidao.test.json") as f:
+    with open("./search.test.json3") as f:
         for i, line in enumerate(f, 1):
-            if i % 10 == 0: print("%s / %s" % (i, 30000))
+            
+            if i % 10 == 0: logger.info("%s / %s" % (i, 30000))
+            #print(i)
             #if i == 10: break
             line = json.loads(line)
             output = []
             for doc in line["documents"]:
                 for para in doc["segmented_paragraphs"]:
+                    
+                    if len(para) == 0: continue
                     if para[0] == "<":
                         para = list(jieba.cut(BeautifulSoup("".join(para), "html.parser").text))
+                    if len(para) == 0: continue
+                    if len(para) > 500: continue
+                    output.append((match_score(line["segmented_question"], para, doc["bs_rank_pos"]), para))
                     try:
-                        output.append((match_score(line["segmented_question"], para, doc["bs_rank_pos"]), para))
+                        pass
                     except:
                         continue    # later we will solve the score division 0 problem
             """
@@ -256,7 +263,7 @@ ZeroDivisionError: division by zero
                     "char_question": [[vocabulary.getCharID(c) for c in v] for v in line["segmented_question"]],
                     "score": o[0],
                 }
-                Write_ID(d)
+                #Write_ID(d)
                 d["segmented_p"] = o[1]
                 d["segmented_q"] = line["segmented_question"]
                 Write(d)

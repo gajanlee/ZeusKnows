@@ -1,7 +1,7 @@
 import json
 
 lookup = {}
-with open("total_test.stat") as t:
+with open("search/total_test.json") as t:
     for i, line in enumerate(t, 1):
         data = json.loads(line)
         if data["question_id"] in lookup:

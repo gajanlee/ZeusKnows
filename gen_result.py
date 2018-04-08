@@ -4,11 +4,11 @@ lookup = json.load(open("total_lookup.stat"))
 
 writer = open("result.json", "w")
 #writerh = open("result_h.json", "w")
-print(lookup["301121"]["paragraphs"]["58075"])
+#print(lookup["301121"]["paragraphs"]["58075"])
 output = {}
 output_h = {}
 for tp in ["yes_no", "entity", "description"]:
-    with open("{}_test_res.stat".format(tp)) as fp:
+    with open("../res/{}_test_res.stat".format(tp)) as fp:
         for u, line in enumerate(fp, 1):
             data = json.loads(line)
             s1, s2 = data["spans"]
@@ -21,6 +21,7 @@ for tp in ["yes_no", "entity", "description"]:
                     "question_type": lookup[str(data["question_id"])]["question_type"],
                     "answers": ["".join(lookup[str(data["question_id"])]["paragraphs"][str(data["passage_id"])][s1: s2]) ],
                     "yesno_answers": [],
+                    "entity_answers": [[]],
                 }
             else:
                 output[data["question_id"]]["answers"].append(

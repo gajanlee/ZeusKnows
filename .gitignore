@@ -9,6 +9,8 @@ word_emb*.npy
 */rank/
 *.zip
 *.json
+*.dat
+search/
 # Word Embedding
 # Byte-compiled / optimized / DLL files
 __pycache__/
