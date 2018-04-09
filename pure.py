@@ -16,26 +16,30 @@ def Pure(passage, spans):
     answer = passage[s:e]
     return answer
             
-lookup = json.load(open("total_lookup.stat"))
+#lookup = json.load(open("total_lookup.stat"))
 
-with open("search_total.stat") as fp:
+with open("match/search_total.stat") as fp:
     lookup = [json.loads(line) for line in fp]
 
 
 
 answers = {}
-with open("08search_res.stat") as fp:
+with open("res/08search_res.stat") as fp:
     for i, line in enumerate(fp):
         data = json.loads(line)
         if data["question_id"] not in answers:
             answers[data["question_id"]] = {
                 "question_id": data["question_id"],
-                "question_type": data["question_type"],
-                "answers": [Pure(lookup[data["passage_id"]], data["answer_spans"])],
+                "question_type": lookup[data["passage_id"]]["question_type"],
+                "answer_spans": [data["spans"]],
+                "passages": [lookup[data["passage_id"]]["segmented_p"]],
+                "question": lookup[data["passage_id"]]["segmented_q"],
                 "yesno_answers": [],
             }
         else:
-            answers[data["question_id"]]["answers"].append(Pure(lookup[data["passage_id"]], data["answer_spans"]))
+            answers[data["question_id"]]["answer_spans"].append(data["spans"])
+            answers[data["question_id"]]["passages"].append(lookup[data["passage_id"]]["segmented_p"])
+        print(i)
 with open("search_res.stat", "w") as w:
     for o in answers.values():
         w.write(json.dumps(o, ensure_ascii=False) + "\n")

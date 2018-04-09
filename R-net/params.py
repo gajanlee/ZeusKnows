@@ -8,13 +8,13 @@ class Params():
     
     tp = "entity"
     train_dir = data_dir + "{}_id_train.stat".format(tp)
-    dev_dir = "../match/search_total.stat".format(tp)
+    dev_dir = "../match/zhidao_total.stat".format(tp)
     test_rank_dir = data_dir + "rank_id.stat"
     #train_dir = data_dir + "entity_id_train.stat"
     #dev_dir = data_dir + "entity_id_dev.stat"
     #logdir = "./train/train"
     logdir = "./train/description"
-    outputdir = "../res/08search_res.stat".format(tp)
+    outputdir = "../res/08zhidao_res.stat".format(tp)
     logdir_rank = "./rank/train"
     glove_dir = "./glove.840B.300d.txt" # Glove file name (If you want to use your own glove, replace the file name here)
     glove_char = "./glove.840B.300d.char.txt" # Character Glove file name
