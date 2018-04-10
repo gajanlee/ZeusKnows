@@ -13,7 +13,7 @@ with open("search/total_test.json") as t:
                 "question_id": data["question_id"],
                 "question_type": data["question_type"],
             }
-        if i % 100 == 0: print(i) 
+        if i % 100 == 0: print(i)
 
 f = open("total_lookup.stat", "w")
 f.write(json.dumps(lookup, ensure_ascii=False) + "\n")
