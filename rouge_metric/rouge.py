@@ -7,7 +7,7 @@
 # Creation Date : 2015-01-07 06:03
 # Author : Ramakrishna Vedantam <vrama91@vt.edu>
 
-import numpy as np
+#import numpy as np
 import pdb
 
 def my_lcs(string, sub):
@@ -103,8 +103,8 @@ class Rouge():
             assert(type(ref) is list)
             assert(len(ref) > 0)
 
-        average_score = np.mean(np.array(score))
-        return average_score, np.array(score)
+        #average_score = np.mean(np.array(score))
+        #return average_score, np.array(score)
 
     def method(self):
         return "Rouge"

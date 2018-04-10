@@ -44,6 +44,12 @@ def replace_invisible(x):
     return x.replace(" ", "").replace("\n", "").replace("&nbsp;", "")
 
 def BestChoice(id, answers, tp):
+    anss = []
+    for ans in answers:
+        if ans is None or len(ans) == 0: continue
+        anss.append("".join(ans))
+    return anss
+
     mx = (-1, None)
     for ans in answers:
         
@@ -58,8 +64,8 @@ def BestChoice(id, answers, tp):
     return "".join(mx[1])
 
 ans = {}
-w = open("search_result.json", "w")
-with open("search_res.stat") as r:
+w = open("10zhidao_result.json", "w")
+with open("zhidao_res.stat") as r:
     import json
 
     for i, line in enumerate(r):
