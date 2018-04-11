@@ -1,5 +1,5 @@
 from collections import Counter
-import jieba
+#import jieba
 import json
 def StopSym(char):
     return char in ["。", "！", "？", "..."]
@@ -34,20 +34,20 @@ def Pure(passage, spans):
     else:
         return passage[first_start(s, spans[0]): first_end(s, spans[1])]
 
-lookup = {}
+"""lookup = {}
 with open("../../09result.json") as r:
     for line in r:
         d = json.loads(line)
         lookup[d["question_id"]] = list(jieba.cut(d["answers"][0]))
-
+"""
 def replace_invisible(x):
-    return x.replace(" ", "").replace("\n", "").replace("&nbsp;", "")
+    return x.replace(" ", "").replace("\n", "").replace("&nbsp;", "").replace("　", "")
 
 def BestChoice(id, answers, tp):
     anss = []
     for ans in answers:
         if ans is None or len(ans) == 0: continue
-        anss.append("".join(ans))
+        anss.append(replace_invisible("".join(ans)))
     return anss
 
     mx = (-1, None)
@@ -64,8 +64,8 @@ def BestChoice(id, answers, tp):
     return "".join(mx[1])
 
 ans = {}
-w = open("10zhidao_result.json", "w")
-with open("zhidao_res.stat") as r:
+w = open("11search_result.json", "w")
+with open("search_res.stat") as r:
     import json
 
     for i, line in enumerate(r):

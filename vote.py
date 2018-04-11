@@ -18,8 +18,11 @@ with open("../../07result.json") as r:
         lookup07[d["question_id"]] = d["answers"][0]
         _lookup07[d["question_id"]] = d
 
+idf = json.load(open("idf.stat"))
+article_count = 1294232
+#idf = json.loads("idf.stat")
 def replace_invisible(x):
-    return x.replace(" ", "").replace("\n", "").replace("&nbsp;", "")
+    return x.replace(" ", "").replace("\n", "").replace("&nbsp;", "").replace("　", "")
 
 # 字符级别的分数判定
 rouge = Rouge()
@@ -30,7 +33,7 @@ def entity(s1, s2, s3):
     if s1 == "。": s1 = s2
     if s2 == "。": s2 = s3
     if s3 == "。": s3 = s2
-    if s3 == "。": return [(0, s1)]
+    if s3 == "。": return [(2, s1)]
     #if s1 in s2 or s1 in s3: return [(2, s1)]
     #if s2 in s1 or s2 in s3: return [(2, s2)]
     #if s3 in s1 or s3 in s2: return [(2, s3)]
@@ -47,7 +50,17 @@ def des_yes(s1, s2, s3):
      (score(s3, s1) + score(s3, s2), s3),
     ]    
 
-def get_answer(s1, s2, s3, tp):
+
+def del_juhao(s_list):
+    res = []
+    for s in s_list:
+        if s == "。": continue
+        for i, _s in enumerate(s):
+            if _s != "。": s = s[i:]; break;
+        res.append(s)
+    return res
+
+def get_answer(s1, s2, s3, tp, q):
     """
     s1: a list of R-net answers
     s2: 09 BIDAF answer
@@ -58,20 +71,36 @@ def get_answer(s1, s2, s3, tp):
     if len(s2) == 0:
         s2 = s3
     if len(s3) == 0: s3 = s2
-    if len(s3) == 0: print("======>fuck+++")
+    s1.append(s2)
+    s1.append(s3)
+    s1 = del_juhao(s1)
     res = []
-    for s in s1:
-        s = replace_invisible(s)
-        if s is None or len(s) == 0: continue
-        if tp == "ENTITY": res.extend(entity(s, s2, s3))
-        else: res.extend(des_yes(s, s2, s3))
+    for i, si in enumerate(s1):
+        scr = 0
+        for j, sj in enumerate(s1):
+            if i == j: continue
+            
+            scr += score(si, sj)
+        #if True not in map(lambda x: x in q, ["什么"]):
+        res.append((scr + score(si, q), si))
+    #res = []
+    #for s in s1:
+    #    if s is None or len(s) == 0: continue
+    #    if tp == "ENTITY": res.extend(entity(s, s2, s3))
+    #    else: res.extend(des_yes(s, s2, s3))
     
     if len(res) == 0: return s2
 
     res.sort(key=lambda x: x[0], reverse=True)
-    #for r in res:
-    #    print(r)
-    #print()
+    for r in res:
+        #print(r)
+        if r != "。":
+            if r[1][0] == "。":
+                print(r[1][0])
+                print(res)
+                print(s1)
+                r[1] = r[1][1:]
+            return r[1]
     return res[0][1]
     
     mx = 0
@@ -99,16 +128,17 @@ def get_answer(s1, s2, s3, tp):
     return s3
     
 
-w = open("pypy3_10result_tri_vote.json", "w")
+w = open("11result_tri_vote_2.json", "w")
 ids = []
 import random
-for f in ["10search_result.json", "10zhidao_result.json"]:
+for f in ["11search_result.json", "11zhidao_result.json"]:
     with open(f) as r:
         for i, line in enumerate(r):
             d = json.loads(line)
-            #print("".join(d["question"]), d["question_type"])
+            #print(d["question_id"], "".join(d["question"]), d["question_type"])
+            #del d["question"]
+            d["answers"] = [get_answer(d["pure_ans"], lookup09[d["question_id"]], lookup07[d["question_id"]], d["question_type"], "".join(d["question"]))]
             del d["question"]
-            d["answers"] = [get_answer(d["pure_ans"], lookup09[d["question_id"]], lookup07[d["question_id"]], d["question_type"])]
             #if d["question_id"] == 237664: print(d["answers"]); break
             del d["pure_ans"]
             w.write(json.dumps(d, ensure_ascii=False) + "\n")
