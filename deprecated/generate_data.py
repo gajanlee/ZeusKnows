@@ -1,7 +1,20 @@
+"""
+---Deprecated
+
+Generate Data by R-net format...
+"""
+
 #!/usr/bin/python3
 from __future__ import division
 from __init__ import *
 import random
+
+import argparse
+parser = argparse.ArgumentParser()
+tp = "zhidao"   #"search"
+parser.add_argument("--tp", default="zhidao", help="the type of generated data type", "zhidao")
+parser.add_argument("--tp", default="zhidao", help="the type of generated data type", "zhidao")
+args = parser.parse_args()
 
 class Writer:
     """Write Infomation to nominated files."""
@@ -160,16 +173,15 @@ class Writer:
     def __exit__(self, *exc_info):
         self.close(self.__TEXT_WELL_FLAG)
 
-tp = "zhidao"   #"search"
 
-def train():
+def train(tp):
     with Writer("train", tp, 0x110) as wt, Writer("dev", tp, 0x110) as wd:
         logger.info("Start process trainset...")
         wt.preprocess()
         logger.info("Start process devset...")
         wd.preprocess()
 
-def test():
+def test(tp):
     with Writer("test", tp, 0x002) as wt:
         wt.preprocess()
 

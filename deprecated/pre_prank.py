@@ -1,3 +1,8 @@
+"""
+---Deprecated
+
+Now we passage rank after training.
+"""
 from __init__ import *
 
 class PassageTag:

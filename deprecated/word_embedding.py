@@ -1,3 +1,8 @@
+"""
+---Deprecated
+
+A training word-embedding code, by gajanlee.    2018-03-15.
+"""
 from __init__ import *
 import tensorflow as tf
 import numpy as np

@@ -1,3 +1,9 @@
+"""
+---Deprecated
+
+Generate Vocabulary File,
+And also generate a vocab list to train word-embedding.
+"""
 from __init__ import *
 from params import Params
 
