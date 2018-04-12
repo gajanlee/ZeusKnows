@@ -2,19 +2,19 @@ class Params():
 
     # data
     data_size = -1 # -1 to use all data
-    num_epochs = 10
+    num_epochs = 3
     train_prop = 0.9 # Not implemented atm
-    data_dir = "../train/"
+    data_dir = "../"
     
-    tp = "entity"
-    train_dir = data_dir + "{}_id_train.stat".format(tp)
-    dev_dir = "../match/zhidao_total.stat".format(tp)
+    tp = "search"
+    train_dir = data_dir + "{}.train.net.json".format(tp)
+    dev_dir = "../{}.dev.net.json".format(tp)
     test_rank_dir = data_dir + "rank_id.stat"
     #train_dir = data_dir + "entity_id_train.stat"
     #dev_dir = data_dir + "entity_id_dev.stat"
     #logdir = "./train/train"
-    logdir = "./train/description"
-    outputdir = "../res/08zhidao_res.stat".format(tp)
+    logdir = "./train/{}".format(tp)
+    outputdir = "../res/{}.res".format(tp)
     logdir_rank = "./rank/train"
     glove_dir = "./glove.840B.300d.txt" # Glove file name (If you want to use your own glove, replace the file name here)
     glove_char = "./glove.840B.300d.char.txt" # Character Glove file name
@@ -30,12 +30,12 @@ class Params():
     # Training
 	# NOTE: To use demo, put batch_size == 1
     #mode = "gen_rank" # case-insensitive options: ["train", "test", "debug"]
-    mode = "test"
+    mode = "train"
     #mode = "train"
     dropout = 0.2 # dropout probability, if None, don't use dropout
     zoneout = None # zoneout probability, if None, don't use zoneout
     optimizer = "adam" # Options: ["adadelta", "adam", "gradientdescent", "adagrad"]
-    batch_size = 50 if mode is not "test" else 100# Size of the mini-batch for training
+    batch_size = 100 if mode is not "test" else 100# Size of the mini-batch for training
     save_steps = 50 # Save the model at every 50 steps
     clip = True # clip gradient norm
     norm = 5.0 # global norm
@@ -50,8 +50,8 @@ class Params():
     max_p_len = 500 #300 # Maximum number of words in each passage context
     max_q_len = 20 #30 # Maximum number of words in each question context
     max_char_len = 5 #16 # Maximum number of characters in a word
-    vocab_size = 556192 #91604 # Number of vocabs in glove.840B.300d.txt + 1 for an unknown token
-    char_vocab_size = 9000 #95 # Number of characters in glove.840B.300d.char.txt + 1 for an unknown character
+    vocab_size = 163825 #91604 # Number of vocabs in glove.840B.300d.txt + 1 for an unknown token
+    char_vocab_size = 7057 #95 # Number of characters in glove.840B.300d.char.txt + 1 for an unknown character
     emb_size = 300 # Embeddings size for words
     char_emb_size = 30 #8 # Embeddings size for characters
     attn_size = 75 # RNN cell and attention module size

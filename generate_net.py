@@ -8,22 +8,24 @@ args = parser.parse_args()
 class Process:
     def __init__(self, tp):
         self.writers = {
-            "SEARCH": open("search.{}.json".format(tp), "w"),
-            "ZHIDAO": open("zhidao.{}.json".format(tp), "w"),
-            "TOTAL": open("total.{}.json".format(tp), "w"),
+            "SEARCH": open("search.{}.net.json".format(tp), "w"),
+            "ZHIDAO": open("zhidao.{}.net.json".format(tp), "w"),
+            "TOTAL": open("total.{}.net.json".format(tp), "w"),
         }
         self.start(tp)
         self.close()
         self.passage_id = 0
 
     def start(self, tp):
-        for _file, _mode in zip(["search.{}.json".format(tp), "zhidao.{}.json".format(tp)], ["SEARCH", "ZHIDAO"]):
+        for _file, _mode in zip(["../DuReader/{tp}set/search.{tp}.json".format(tp=tp), "../DuReader/{tp}set/zhidao.{tp}.json".format(tp=tp)], ["SEARCH", "ZHIDAO"]):
             with open(_file) as r:
-                for i, line in r:
+                for i, line in enumerate(r, 1):
                     if tp == "test": d = self.test_process(json.loads(line))
                     elif tp in ["train", "dev"]: d = self.train_process(json.loads(line))
                     if d is None: continue
                     [self.writers[_m].write(json.dumps(d, ensure_ascii=False) + "\n") for _m in [_mode, "TOTAL"]]
+                    if False and i >= 101: break
+                    if i % 100 == 0: print(i, tp, _mode)
 
     def train_process(self, data):
         if not data["match_scores"]: return
@@ -60,7 +62,7 @@ class Process:
             pass
     
     def close(self):
-        for writer in self.writers:
+        for writer in self.writers.values():
             writer.close()
 
 if __name__ == "__main__":

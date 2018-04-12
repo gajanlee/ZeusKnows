@@ -30,16 +30,26 @@ class Vocabulary:
         print("char_dict size is ", len(self.char_dict))
 
     def load_vocab_dict(self, vocab_path):
-        with open(vocab_path) as fp: 
-            for i, line in enumerate(fp):
-                self.vocab_dict[i] = line.split(" ")[0] 
+        vocab_dict = json.load(open(vocab_path))
+        for vocab, _id in vocab_dict.items():
+            self.vocab_dict[_id] = vocab
+
+        print("=======>", self.vocab_dict[100])
+
+        #with open(vocab_path) as fp: 
+            #for i, line in enumerate(fp):
+                #self.vocab_dict[i] = line.split(" ")[0] 
                 #self.vocab_dict[res[1]] = int(res[0])
 
     def load_char_dict(self, char_path):
-        with open(char_path) as fp: 
-            for i, line in enumerate(fp, 1): 
+        char_dict = json.load(open(char_path))
+        for char, _id in char_dict.items():
+            self.char_dict[_id] = char
+        print("======>", self.char_dict[100])
+        #with open(char_path) as fp: 
+            #for i, line in enumerate(fp, 1): 
                 #self.char_dict[line[:-1]] = i 
-                self.char_dict[i] = line.split(" ")[0]
+                #self.char_dict[i] = line.split(" ")[0]
                 #res = line.split(' ')
                 #print(res[0], '+', res[1])
                 #self.char_dict[res[0]] = int(res[1])
@@ -48,14 +58,14 @@ class Vocabulary:
     def ind2word(self,ids):
         output = []
         for i in ids:
-            output.append(str(self.vocab_dict[i]))
+            output.append(self.vocab_dict[i])
         return " ".join(output)
 
     def ind2char(self,ids):
         output = []
         for i in ids:
             for j in i:
-                output.append(str(self.char_dict[j]))
+                output.append(self.char_dict[j])
             output.append(" ")
         return "".join(output)
 
