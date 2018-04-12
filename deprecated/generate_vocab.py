@@ -1,3 +1,9 @@
+"""
+---Deprecated
+
+Convert Word2vec Output File to a json file (vocab.dict/ char.dict). 
+"""
+
 import word2vec
 import json
 import numpy as np

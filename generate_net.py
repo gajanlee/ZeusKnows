@@ -3,6 +3,7 @@ from __init__ import *
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--tp", default="train", help="the type of generated data type")
+parser.add_argument("--data_dir", default="../DuReader/data/preprocessed/", help="train/dev/test based directory path")
 args = parser.parse_args()
 
 class Process:
@@ -17,7 +18,7 @@ class Process:
         self.passage_id = 0
 
     def start(self, tp):
-        for _file, _mode in zip(["../DuReader/{tp}set/search.{tp}.json".format(tp=tp), "../DuReader/{tp}set/zhidao.{tp}.json".format(tp=tp)], ["SEARCH", "ZHIDAO"]):
+        for _file, _mode in zip([args.data_dir + "{tp}set/search.{tp}.json".format(tp=tp), args.data_dir + "{tp}set/zhidao.{tp}.json".format(tp=tp)], ["SEARCH", "ZHIDAO"]):
             with open(_file) as r:
                 for i, line in enumerate(r, 1):
                     if tp == "test": d = self.test_process(json.loads(line))

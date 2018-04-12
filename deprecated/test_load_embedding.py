@@ -1,3 +1,10 @@
+"""
+---Deprecated
+
+StackOverflow: How to load tensorflow model correctly.
+Load tensorflow saved model example.
+"""
+
 import tensorflow as tf
 sess=tf.Session()    
 #First let's load meta graph and restore weights
