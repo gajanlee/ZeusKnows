@@ -16,6 +16,10 @@ import cPickle as pickle
 #from demo import Demo
 import os
 
+import sys  
+reload(sys)  
+sys.setdefaultencoding('utf8')   
+
 optimizer_factory = {"adadelta":tf.train.AdadeltaOptimizer,
             "adam":tf.train.AdamOptimizer,
             "gradientdescent":tf.train.GradientDescentOptimizer,
@@ -33,7 +37,6 @@ class Vocabulary:
         vocab_dict = json.load(open(vocab_path))
         for vocab, _id in vocab_dict.items():
             self.vocab_dict[_id] = vocab
-
         print("=======>", self.vocab_dict[100])
 
         #with open(vocab_path) as fp: 
