@@ -1,4 +1,5 @@
 from __init__ import *
+from copy import copy
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -13,11 +14,12 @@ class Process:
             "ZHIDAO": open("zhidao.{}.net.json".format(tp), "w"),
             "TOTAL": open("total.{}.net.json".format(tp), "w"),
         }
+        self.passage_id = 0
         self.start(tp)
         self.close()
-        self.passage_id = 0
 
     def start(self, tp):
+        res = []
         for _file, _mode in zip([args.data_dir + "{tp}set/search.{tp}.json".format(tp=tp), args.data_dir + "{tp}set/zhidao.{tp}.json".format(tp=tp)], ["SEARCH", "ZHIDAO"]):
             with open(_file) as r:
                 for i, line in enumerate(r, 1):
@@ -25,8 +27,10 @@ class Process:
                     elif tp in ["train", "dev"]: d = self.train_process(json.loads(line))
                     if d is None: continue
                     if tp != "test":
+                        
                         [self.writers[_m].write(json.dumps(d, ensure_ascii=False) + "\n") for _m in [_mode, "TOTAL"]]
                     else:
+                        #res += d
                         [[self.writers[_m].write(json.dumps(_d, ensure_ascii=False) + "\n") for _m in [_mode, "TOTAL"]] for _d in d]
                     if False and i >= 101: break
                     if i % 100 == 0: print(i, tp, _mode)
@@ -65,11 +69,17 @@ class Process:
         }
 
         for doc in data["documents"]:
+            p = []
             for para in doc["segmented_paragraphs"]:
-                format["segmented_p"] = para
-                format["segmented_paragraph"] = [vocabulary.getVocabID(v) for v in para]
-                format["char_paragraph"] = [vocabulary.getCharID(word, True) for word in para]
-                res.append(format)
+                p += para
+            
+            format["segmented_p"] = p
+            format["segmented_paragraph"] = [vocabulary.getVocabID(v) for v in p]
+            format["char_paragraph"] = [vocabulary.getCharID(word, True) for word in p]
+            format["passage_id"] = self.passage_id
+            self.passage_id += 1
+            f = copy(format)
+            res.append(f)
         return res
     
     def close(self):
