@@ -122,13 +122,13 @@ class Model(object):
             self.passage_w_len = tf.squeeze(self.passage_w_len_, -1)
             self.question_w_len = tf.squeeze(self.question_w_len_, -1)
             
-            with tf.device("/gpu:0"):
-                self.encode_ids()
-                self.params = get_attn_params(Params.attn_size, initializer = tf.contrib.layers.xavier_initializer)
-            with tf.device("/gpu:1"):
-                self.attention_match_rnn()
-                self.bidirectional_readout()
-                self.pointer_network()
+            #with tf.device("/gpu:0"):
+            self.encode_ids()
+            self.params = get_attn_params(Params.attn_size, initializer = tf.contrib.layers.xavier_initializer)
+            #with tf.device("/gpu:1"):
+            self.attention_match_rnn()
+            self.bidirectional_readout()
+            self.pointer_network()
             self.outputs()
             
             #self.passage_rank()

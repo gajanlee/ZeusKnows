@@ -47,7 +47,7 @@ class Params():
 
     # Architecture
     SRU = True # Use SRU cell, if False, use standard GRU cell
-    max_p_len = 500 #300 # Maximum number of words in each passage context
+    max_p_len = 450 #300 # Maximum number of words in each passage context
     max_q_len = 20 #30 # Maximum number of words in each question context
     max_char_len = 5 #16 # Maximum number of characters in a word
     vocab_size = 163825 #91604 # Number of vocabs in glove.840B.300d.txt + 1 for an unknown token

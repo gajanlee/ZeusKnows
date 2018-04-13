@@ -14,7 +14,8 @@ from torch.autograd import Variable
 from model import RNNModel
 from data_zh import Corpus
 
-train_dir = 'data/sanguoyanyi.txt'
+train_dir = 'news.dat'
+
 filename = str(os.path.basename(train_dir).split('.')[0])
 
 # 用于保存模型参数
@@ -23,8 +24,8 @@ if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 model_name = filename + '_{}.pt'
 
-use_cuda = torch.cuda.is_available()
-
+#use_cuda = torch.cuda.is_available()
+use_cuda = False
 parser = argparse.ArgumentParser(description='PyTorch Chinese Language Model')
 parser.add_argument('--mode', type=str, default='train', help='train or gen.')
 parser.add_argument('--epoch', type=int, default=3, help='the epoch of parameter to be loaded.')
@@ -169,7 +170,7 @@ def train():
         if epoch % config.save_interval == 0:
             torch.save(model.state_dict(), os.path.join(save_dir, model_name.format(epoch)))
 
-        print(''.join(generate(model, corpus.dictionary.idx2word)))
+        print(''.join(generate(model, corpus.dictionary.VocabID_to_vocab)))
 
 
 def generate_flow(epoch=3):
