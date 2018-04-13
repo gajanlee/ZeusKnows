@@ -32,3 +32,10 @@ word2vec.word2vec('large_pre.dat', 'wordsVec.bin', size=300, verbose=True, sampl
 1. word_embedding 40count 运行中
 * 95: /home/libei/ljz/sougou_data/word_50.log
 * aliyun: ZeusKnows/word2vec.log
+
+
+## TODO:
+1. add language_model(pytorch) implementation.
+* 把所有的有关预处理和文章排序文件下放到另外的一个文件夹。
+* 把language_model作为一个包。__init__.py可以引用vocabulary.
+* 
