@@ -13,6 +13,7 @@ from torch.autograd import Variable
 
 from model import RNNModel
 from data_zh import Corpus
+from __init__ import *
 
 train_dir = 'news.dat'
 
@@ -114,9 +115,9 @@ def generate(model, idx2word, word_len=200, temperature=1.0):
 
 def train():
     # 载入数据与配置模型
-    print("Loading data...")
+    logger.info("Loading data...")
     corpus = Corpus(train_dir)
-    print(corpus)
+    logger.info(corpus)
 
     config = Config()
     config.vocab_size = len(corpus.dictionary)
@@ -124,17 +125,17 @@ def train():
     train_len = train_data.size(0)
     seq_len = config.seq_len
 
-    print("Configuring model...")
+    logger.info("Configuring model...")
     model = RNNModel(config)
     if use_cuda:
         model.cuda()
-    print(model)
+    logger.info(model)
 
     criterion = nn.CrossEntropyLoss()
     lr = config.learning_rate  # 初始学习率
     start_time = time.time()
 
-    print("Training and generating...")
+    logger.info("Training and generating...")
     for epoch in range(1, config.num_epochs + 1):  # 多轮次训练
         total_loss = 0.0
         model.train()  # 在训练模式下dropout才可用。
@@ -161,7 +162,7 @@ def train():
             if ibatch % config.log_interval == 0 and ibatch > 0:  # 每隔多少个批次输出一次状态
                 cur_loss = total_loss[0] / config.log_interval
                 elapsed = get_time_dif(start_time)
-                print("Epoch {:3d}, {:5d}/{:5d} batches, lr {:2.3f}, loss {:5.2f}, ppl {:8.2f}, time {}".format(
+                logger.info("Epoch {:3d}, {:5d}/{:5d} batches, lr {:2.3f}, loss {:5.2f}, ppl {:8.2f}, time {}".format(
                     epoch, ibatch, train_len // seq_len, lr, cur_loss, math.exp(cur_loss), elapsed))
                 total_loss = 0.0
         lr /= 4.0  # 在一轮迭代完成后，尝试缩小学习率
@@ -170,7 +171,7 @@ def train():
         if epoch % config.save_interval == 0:
             torch.save(model.state_dict(), os.path.join(save_dir, model_name.format(epoch)))
 
-        print(''.join(generate(model, corpus.dictionary.VocabID_to_vocab)))
+        logger.info(''.join(generate(model, corpus.dictionary.VocabID_to_vocab)))
 
 
 def generate_flow(epoch=3):
@@ -185,7 +186,7 @@ def generate_flow(epoch=3):
     model.load_state_dict(torch.load(model_file, map_location=lambda storage, loc: storage))
 
     word_list = generate(model, corpus.dictionary.idx2word, word_len=50)
-    print(''.join(word_list))
+    logger.info(''.join(word_list))
 
 
 if __name__ == '__main__':

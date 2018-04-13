@@ -24,7 +24,10 @@ class Process:
                     if tp == "test": d = self.test_process(json.loads(line))
                     elif tp in ["train", "dev"]: d = self.train_process(json.loads(line))
                     if d is None: continue
-                    [self.writers[_m].write(json.dumps(d, ensure_ascii=False) + "\n") for _m in [_mode, "TOTAL"]]
+                    if tp != "test":
+                        [self.writers[_m].write(json.dumps(d, ensure_ascii=False) + "\n") for _m in [_mode, "TOTAL"]]
+                    else:
+                        [[self.writers[_m].write(json.dumps(_d, ensure_ascii=False) + "\n") for _m in [_mode, "TOTAL"]] for _d in d]
                     if False and i >= 101: break
                     if i % 100 == 0: print(i, tp, _mode)
 
@@ -52,15 +55,22 @@ class Process:
         return base_format
 
     def test_process(self, data):
+        res = []
         format = {
             "question_id": data["question_id"],
             "question_type": data["question_type"],
-            "segmented_question": data["segmented_question"],
-            "char_question": [vocabulary.getCharID(word, True) for word in data["segmented_question"]]
+            "segmented_q": data["segmented_question"],
+            "segmented_question": [vocabulary.getVocabID(v) for v in data["segmented_question"]],
+            "char_question": [vocabulary.getCharID(word, True) for word in data["segmented_question"]],
         }
 
         for doc in data["documents"]:
-            pass
+            for para in doc["segmented_paragraphs"]:
+                format["segmented_p"] = para
+                format["segmented_paragraph"] = [vocabulary.getVocabID(v) for v in para]
+                format["char_paragraph"] = [vocabulary.getCharID(word, True) for word in para]
+                res.append(format)
+        return res
     
     def close(self):
         for writer in self.writers.values():
