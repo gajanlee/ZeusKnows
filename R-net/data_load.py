@@ -292,7 +292,11 @@ def ljz_load_data(_file):
             elif Params.mode.lower() == "gen_rank" or Params.mode == "test":
                 indices.append([0, 0])
                 tags.append([0])
-                #ids.append()
+                ids.append([d["question_id"], d["passage_id"]])
+            elif Params.mode == "dev":
+                indices.append([d["answer_spans"][0][0], d["answer_spans"][0][1]+1])
+                tags.append([0])
+                ids.append()
             else:
                 indices.append([d["answer_spans"][0][0], d["answer_spans"][0][1]+1])
                 tags.append([0])
