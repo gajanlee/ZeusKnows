@@ -12,6 +12,7 @@ word_emb*.npy
 *.dat
 search/
 match/
+*/checkpoint*/*
 # Word Embedding
 # Byte-compiled / optimized / DLL files
 __pycache__/

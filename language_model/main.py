@@ -30,6 +30,7 @@ use_cuda = False
 parser = argparse.ArgumentParser(description='PyTorch Chinese Language Model')
 parser.add_argument('--mode', type=str, default='train', help='train or gen.')
 parser.add_argument('--epoch', type=int, default=3, help='the epoch of parameter to be loaded.')
+parser.add_argument("--load", type=int, default=0, help='the epoch of training to be loaded.')
 args = parser.parse_args()
 
 
@@ -92,11 +93,11 @@ def get_time_dif(start_time):
     return timedelta(seconds=int(round(time_dif)))
 
 
-def generate(model, idx2word, word_len=200, temperature=1.0):
+def generate(model, idx2word, vocab_size, word_len=200, temperature=1.0):
     """生成一定数量的文本，temperature结合多项式分布可增添抽样的多样性。"""
     model.eval()
     hidden = model.init_hidden(1)  # batch_size为1
-    inputs = Variable(torch.rand(1, 1).mul(len(idx2word)).long(), volatile=True)  # 随机选取一个字作为开始
+    inputs = Variable(torch.rand(1, 1).mul(vocab_size).long(), volatile=True)  # 随机选取一个字作为开始
     if use_cuda:
         inputs = inputs.cuda()
 
@@ -106,10 +107,18 @@ def generate(model, idx2word, word_len=200, temperature=1.0):
         word_weights = output.squeeze().data.div(temperature).exp().cpu()
 
         # 基于词的权重，对其再进行一次抽样，增添其多样性，如果不使用此法，会导致常用字的无限循环
-        word_idx = torch.multinomial(word_weights, 1)[0]
-        inputs.data.fill_(word_idx)  # 将新生成的字赋给inputs
-        word = idx2word[word_idx]
+        # word_idx = torch.multinomial(word_weights, 1)[0]
+        word_idx = torch.multinomial(word_weights, 1)
+        #print(word_idx)
+        #for word in word_idx[:5]:
+        #    if word_idx != None: inputs.data.fill_(word_idx); break
+        #inputs.data.fill_(word_idx)  # 将新生成的字赋给inputs
+        #print(word_idx)
+        #if word_idx[0] is None: word_idx = 0
+        if int(word_idx) == 0: continue
+        word = idx2word(word_idx)
         word_list.append(word)
+        print(word)
     return word_list
 
 
@@ -130,6 +139,13 @@ def train():
     if use_cuda:
         model.cuda()
     logger.info(model)
+    if args.load != 0:
+        model_file = os.path.join(save_dir, model_name.format(args.load))
+        assert os.path.exists(model_file), 'File %s does not exist.' % model_file
+        model.load_state_dict(torch.load(model_file, map_location=lambda storage, loc: storage))
+        logger.info("Loaded model file %s" % model_file)
+    else:
+        logger.info("No loaded model file...")
 
     criterion = nn.CrossEntropyLoss()
     lr = config.learning_rate  # 初始学习率
@@ -145,6 +161,7 @@ def train():
             data, targets = get_batch(train_data, i, seq_len)  # 取一个批次的数据
             # 在每批开始之前，将隐藏的状态与之前产生的结果分离。
             # 如果不这样做，模型会尝试反向传播到数据集的起点。
+            logger.info("batch %s starting..." % ibatch)
             hidden = repackage_hidden(hidden)
             model.zero_grad()
 
@@ -168,10 +185,10 @@ def train():
         lr /= 4.0  # 在一轮迭代完成后，尝试缩小学习率
 
         # 每隔多少轮次保存一次模型参数
-        if epoch % config.save_interval == 0:
-            torch.save(model.state_dict(), os.path.join(save_dir, model_name.format(epoch)))
+        #if epoch % config.save_interval == 0:
+        torch.save(model.state_dict(), os.path.join(save_dir, model_name.format(epoch)))
 
-        logger.info(''.join(generate(model, corpus.dictionary.VocabID_to_vocab)))
+        logger.info(''.join(generate(model, corpus.dictionary.VocabID_to_vocab, len(corpus.dictionary))))
 
 
 def generate_flow(epoch=3):
@@ -185,7 +202,7 @@ def generate_flow(epoch=3):
     assert os.path.exists(model_file), 'File %s does not exist.' % model_file
     model.load_state_dict(torch.load(model_file, map_location=lambda storage, loc: storage))
 
-    word_list = generate(model, corpus.dictionary.idx2word, word_len=50)
+    word_list = generate(model, corpus.dictionary.VocabID_to_vocab, len(corpus.dictionary), word_len=50)
     logger.info(''.join(word_list))
 
 

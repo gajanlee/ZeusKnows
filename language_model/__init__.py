@@ -38,7 +38,7 @@ class Vocabulary:
         return self.vocab_dict.get(word, 0)
 
     def VocabID_to_vocab(self, id):
-        self.vocab_id_dict.get(id, "<vocab-unknown>")
+        return self.vocab_id_dict.get(int(id), "<vocab-unknown>")
 
     def generate_char_dict(self):
         """
@@ -58,7 +58,7 @@ class Vocabulary:
         logger.info("Char dictionary loaded DONE! SUM %s ." % len(self.char_dict))
 
     def add_word(self, word):
-        if word not in self.vocab_dict: self.vocab_dict[word] = len(self.vocab_dict)
+        if word not in self.vocab_dict: self.vocab_dict[word] = len(self.vocab_dict); self.vocab_id_dict[len(self.vocab_id_dict)] = word
         for char in word:
             if char not in self.char_dict: self.char_dict[char] = len(self.char_dict)
 
