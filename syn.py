@@ -35,11 +35,11 @@ class DataHandler:
     def lookup_by_passage_id(self, passage_id):
         return self.data[passage_id]
                 
-    @Config.required_ensemble
+    #@Config.required_ensemble
     def get_all_bidaf(self):
         return self.bidaf_result
     
-
+data_handler = DataHandler(ensemble=True)
 
 def recover_from_rnet(data_json):
     """
@@ -94,6 +94,9 @@ def write():
         Write Final Answers to a File.
     """
     pass
+
+if __name__ == "__main__":
+    
     
 
 
