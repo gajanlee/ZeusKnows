@@ -1,11 +1,13 @@
-from .utils import *
+from utils import *
 import json
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-v")
-parser.add_argument("-debug")
+parser.add_argument("-v", "--verbose", help="output verbose information", action="store_true")
+parser.add_argument("-d", "--debug", help="print more information in debug mode", action="store_true")
+parser.add_argument("--max_p", help="load max passage len", default=450, type=int)
 args = parser.parse_args()
+print(args.verbose, args.debug)
 
 
 class Config:
@@ -26,9 +28,9 @@ class DataHandler:
         self.lookup = {}    # It is used to find passage and question for "R-net" model
         self.r_net_result = {}     # It stores R-net model result (after synthesis).
 
-        self.load_test_data("./test.net.json")
-        self.load_test_result("./res/14")
-        self.load_bidaf_result("../../07result.json")
+        self.load_test_data("./total.test.net.json")
+        self.load_test_result("./14_total_total_model.res")
+        self.load_bidaf_result("../../09result.json")
 
     @logging_util
     def load_test_data(self, path):
@@ -37,7 +39,9 @@ class DataHandler:
         """
         with open(path) as f:
             for i, line in enumerate(f, 1):
+                if args.verbose and i % 1000 == 0: logger.info("Now Line %s" % i)
                 data = json.loads(line)
+                if len(data["segmented_p"]) > args.max_p: continue
                 if data["question_id"] not in self.lookup:
                     del data["segmented_question"], data["segmented_paragraph"]
                     del data["char_question"], data["char_paragraph"]
@@ -47,7 +51,6 @@ class DataHandler:
                     self.lookup[data["question_id"]] = data
                 else:
                     self.lookup[data["question_id"]]["passages"][data["passage_id"]] = data["segmented_p"]
-                if args.v and i % 1000 == 0: logger.info("Now Line %s" % i)
     
     @logging_util
     def load_test_result(self, path):
@@ -70,14 +73,14 @@ class DataHandler:
                     self.r_net_result[d["question_id"]] = {
                         "question_id": d["question_id"],
                         "question_type": self.lookup[d["question_id"]]["question_type"],
-                        "question": self.lookup[d["question_id"]]["question"],
+                        "question": self.lookup[d["question_id"]]["segmented_q"],
                         "answers": ["".join(ans)],
                         "yesno_answers": [],
                         "entity_answers": [[]],
                     }
                 else: 
                     self.r_net_result[d["question_id"]]["answers"].append("".join(ans))
-                if args.v and i % 1000 == 0: logger.info("Now Line %s" % i)
+                if args.verbose and i % 1000 == 0: logger.info("Loaded R-net Result, Line now is %s" % i)
                 if args.debug and i == 200: logger.info("Debug Model, Loaded R-net Data Done"); break
 
         
@@ -101,8 +104,8 @@ def write(result):
     TODO:
         Write Final Answers to a File.
     """
-    with open("15r_net.json", "w") as w:
-        [w.write(json.dumps(d) + "\n") for d in result]
+    with open("15r_net_total.json", "w") as w:
+        [w.write(json.dumps(d, ensure_ascii=False) + "\n") for d in result.values()]
 
 
 def _get_best(*ans_jsons):
@@ -125,7 +128,8 @@ def _get_best(*ans_jsons):
     if args.debug:
         print(scores, "\n")
     
-    ans_jsons[0]["answers"] = [scores[0]]
+    del ans_jsons[0]["question"]
+    ans_jsons[0]["answers"] = [scores[0][1]]
     return ans_jsons[0]
     
         
@@ -137,11 +141,13 @@ def rerank(result):
         assign final answer to result
     """
     res = {}
-    for q_id, ans in result.items():
+    for i, (q_id, ans) in enumerate(result.items()):
         res[q_id] = _get_best(ans, data_handler.get_bidaf_by_id(q_id))
-    
+        if args.verbose and i % 1000 == 0: logger.info("Reranking Line %s" % i)
+
     for q_id, d in data_handler.get_all_bidaf().items():
         if q_id not in res: res[q_id] = d
+    logger.info("R-net / Bidaf ==> %s / %s" % (i, 60000-i))
     write(res)
 
 
