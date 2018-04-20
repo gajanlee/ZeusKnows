@@ -7,7 +7,6 @@ parser.add_argument("-v", "--verbose", help="output verbose information", action
 parser.add_argument("-d", "--debug", help="print more information in debug mode", action="store_true")
 parser.add_argument("--max_p", help="load max passage len", default=450, type=int)
 args = parser.parse_args()
-print(args.verbose, args.debug)
 
 
 class Config:
@@ -29,7 +28,7 @@ class DataHandler:
         self.r_net_result = {}     # It stores R-net model result (after synthesis).
 
         self.load_test_data("./total.test.net.json")
-        self.load_test_result("./14_total_total_model.res")
+        self.load_test_result("./res/search.res")
         self.load_bidaf_result("../../09result.json")
 
     @logging_util
@@ -39,7 +38,7 @@ class DataHandler:
         """
         with open(path) as f:
             for i, line in enumerate(f, 1):
-                if args.verbose and i % 1000 == 0: logger.info("Now Line %s" % i)
+                if args.verbose and i % 10000 == 0: logger.info("Now Line %s" % i)
                 data = json.loads(line)
                 if len(data["segmented_p"]) > args.max_p: continue
                 if data["question_id"] not in self.lookup:
@@ -80,7 +79,7 @@ class DataHandler:
                     }
                 else: 
                     self.r_net_result[d["question_id"]]["answers"].append("".join(ans))
-                if args.verbose and i % 1000 == 0: logger.info("Loaded R-net Result, Line now is %s" % i)
+                if args.verbose and i % 10000 == 0: logger.info("Loaded R-net Result, Line now is %s" % i)
                 if args.debug and i == 200: logger.info("Debug Model, Loaded R-net Data Done"); break
 
         
@@ -104,7 +103,7 @@ def write(result):
     TODO:
         Write Final Answers to a File.
     """
-    with open("15r_net_total.json", "w") as w:
+    with open("20r_net_total.json", "w") as w:
         [w.write(json.dumps(d, ensure_ascii=False) + "\n") for d in result.values()]
 
 
@@ -143,7 +142,7 @@ def rerank(result):
     res = {}
     for i, (q_id, ans) in enumerate(result.items()):
         res[q_id] = _get_best(ans, data_handler.get_bidaf_by_id(q_id))
-        if args.verbose and i % 1000 == 0: logger.info("Reranking Line %s" % i)
+        if args.verbose and i % 10000 == 0: logger.info("Reranking Line %s" % i)
 
     for q_id, d in data_handler.get_all_bidaf().items():
         if q_id not in res: res[q_id] = d
