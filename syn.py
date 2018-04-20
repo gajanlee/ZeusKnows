@@ -67,18 +67,19 @@ class DataHandler:
         with open(path) as f:
             for i, line in enumerate(f, 1):
                 d = json.loads(line)
-                ans = self.lookup[d["question_id"]]["passages"][d["passage_id"]][d["spans"][0]: d["spans"][1]]
+                ans = expand_answer(self.lookup[d["question_id"]]["passages"][d["passage_id"]], d["spans"])
+                # ans = self.lookup[d["question_id"]]["passages"][d["passage_id"]][d["spans"][0]: d["spans"][1]]  # We need expand up/down spans.
                 if d["question_id"] not in self.r_net_result:
                     self.r_net_result[d["question_id"]] = {
                         "question_id": d["question_id"],
                         "question_type": self.lookup[d["question_id"]]["question_type"],
                         "question": self.lookup[d["question_id"]]["segmented_q"],
-                        "answers": ["".join(ans)],
+                        "answers": [ans], 
                         "yesno_answers": [],
                         "entity_answers": [[]],
                     }
                 else: 
-                    self.r_net_result[d["question_id"]]["answers"].append("".join(ans))
+                    self.r_net_result[d["question_id"]]["answers"].append(ans)
                 if args.verbose and i % 10000 == 0: logger.info("Loaded R-net Result, Line now is %s" % i)
                 if args.debug and i == 200: logger.info("Debug Model, Loaded R-net Data Done"); break
 
@@ -107,13 +108,17 @@ def write(result):
         [w.write(json.dumps(d, ensure_ascii=False) + "\n") for d in result.values()]
 
 
+def _base_valid(ans):
+    if ans in ["。", "", None]: return False
+    return True
+    
+
 def _get_best(*ans_jsons):
     """
     ans_jsons is a set of candidate data
     """
-    anses = []
     for ans_json in ans_jsons:
-        [anses.append(ans) for ans in ans_json["answers"] if len(ans) != 0]
+        anses = [ans for ans in ans_json["answers"] if _base_valid(ans)]
         # anses.extend(ans_json["answers"])
 
     scores = []
