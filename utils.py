@@ -25,9 +25,9 @@ def expand_answer(passage, spans):
     s = seg(passage)
     if "、" in passage:
         dunhao = seg(passage, lambda x: x == "、")
-        return passage[first_start(s, dunhao[1]): first_end(s, dunhao[-2])]
+        return "".join(passage[first_start(s, dunhao[1]): first_end(s, dunhao[-2])])
     else:
-        return passage[first_start(s, spans[0]): first_end(s, spans[1])]
+        return "".join(passage[first_start(s, spans[0]): first_end(s, spans[1])])
 
 def replace_invisible(x):
     """
@@ -54,7 +54,7 @@ from functools import wraps
 def logging_util(func):
     @wraps(func)
     def with_logging(*args, **kwargs):
-        logger.info("Starting %s" % (func.__name__))
+        logger.info("Starting %s, args: %s" % (func.__name__, args[1:]))
         return func(*args, **kwargs)
     return with_logging
 

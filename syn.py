@@ -1,11 +1,14 @@
 from utils import *
-import json
+import json, time
 import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", "--verbose", help="output verbose information", action="store_true")
 parser.add_argument("-d", "--debug", help="print more information in debug mode", action="store_true")
 parser.add_argument("--max_p", help="load max passage len", default=450, type=int)
+parser.add_argument("--r_net", help="r_net result file path", default="./res/search.res", type=str)
+parser.add_argument("--bidaf", help="bidaf result file paths, a list of items", nargs="*", default="../../09result.json", type=str)
+parser.add_argument("--output", help="synthetic result output file path", default=str(time.localtime(time.time()).tm_mday)+"result.json")   # as 20result.json
 args = parser.parse_args()
 
 
@@ -28,8 +31,8 @@ class DataHandler:
         self.r_net_result = {}     # It stores R-net model result (after synthesis).
 
         self.load_test_data("./total.test.net.json")
-        self.load_test_result("./res/search.res")
-        self.load_bidaf_result("../../09result.json")
+        self.load_test_result(args.r_net)
+        self.load_bidaf_result(args.bidaf)
 
     @logging_util
     def load_test_data(self, path):
@@ -85,9 +88,14 @@ class DataHandler:
 
         
     @logging_util
-    def load_bidaf_result(self, path):
-        with open(path) as r:
-            self.bidaf_result = { json.loads(line)["question_id"]: json.loads(line) for line in r }
+    def load_bidaf_result(self, paths):
+        if type(paths) is str: paths = [paths]
+        assert type(paths) is list
+        for path in paths:
+            with open(path) as r:
+                logger.info("Loading BIDAF Result, path is %s" % path)
+                if not hasattr(self, "bidaf_result"): self.bidaf_result = { json.loads(line)["question_id"]: json.loads(line) for line in r }
+                else: [self.bidaf_result[json.loads(line)["question_id"]]["answers"].extend(json.loads(line)["answers"]) for line in r]
 
     #@Config.required_ensemble
     def get_all_bidaf(self):
@@ -104,36 +112,40 @@ def write(result):
     TODO:
         Write Final Answers to a File.
     """
-    with open("20r_net_total.json", "w") as w:
+    with open(args.output, "w") as w:
         [w.write(json.dumps(d, ensure_ascii=False) + "\n") for d in result.values()]
 
 
 def _base_valid(ans):
-    if ans in ["。", "", None]: return False
-    return True
+    return ans not in ["。", "", None]
     
 
+stat = [0, 0, 0]
 def _get_best(*ans_jsons):
     """
     ans_jsons is a set of candidate data
     """
-    for ans_json in ans_jsons:
-        anses = [ans for ans in ans_json["answers"] if _base_valid(ans)]
+    anses = []
+    for i, ans_json in enumerate(ans_jsons):
+        anses.extend([(replace_invisible(ans), i) for ans in ans_json["answers"] if _base_valid(ans)])
+        #anses = [ans for ans in ans_json["answers"] if _base_valid(ans)]
         # anses.extend(ans_json["answers"])
-
+    if args.debug:
+        print(anses)
     scores = []
-    for i, a1 in enumerate(anses):
+    for i, (a1, _bl) in enumerate(anses):
         scr = 0
-        for j, a2 in enumerate(anses):
+        for j, (a2, _) in enumerate(anses):
             if i == j: continue
             scr += score(a1, a2)
-        scores.append((scr, a1))
+        scores.append((scr, a1, _bl))
     scores.sort(key=lambda x: x[0], reverse=True)
     if args.debug:
         print(scores, "\n")
     
     del ans_jsons[0]["question"]
-    ans_jsons[0]["answers"] = [scores[0][1]]
+    if len(scores) == 0: print(ans_jsons); ans_jsons[0]["answers"] = ans_jsons[1]["answers"][0]; stat[1] += 1
+    else: ans_jsons[0]["answers"] = [s[1] for s in scores[:2]]; stat[scores[0][2]] += 1
     return ans_jsons[0]
     
         
@@ -145,11 +157,12 @@ def rerank(result):
         assign final answer to result
     """
     res = {}
-    for i, (q_id, ans) in enumerate(result.items()):
+    for i, (q_id, ans) in enumerate(result.items(), 1):
         res[q_id] = _get_best(ans, data_handler.get_bidaf_by_id(q_id))
-        if args.verbose and i % 10000 == 0: logger.info("Reranking Line %s" % i)
+        if args.verbose and i % 1000 == 0: logger.info("Reranking count %s / 60000" % i)
 
     for q_id, d in data_handler.get_all_bidaf().items():
+        d["answers"] = [d["answers"][0]]
         if q_id not in res: res[q_id] = d
     logger.info("R-net / Bidaf ==> %s / %s" % (i, 60000-i))
     write(res)
@@ -157,6 +170,6 @@ def rerank(result):
 
 if __name__ == "__main__":
     rerank(data_handler.r_net_result)
-    
+    logger.info("Selected: R-net / Bidaf ==> %s / %s" % (stat[0], stat[1]))
 
 
