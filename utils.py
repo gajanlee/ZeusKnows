@@ -64,17 +64,16 @@ def entity(answer):
     return:
         [a list of entity answers]
     """
-    import jieba
+    import jieba, string
     res = []
     for e in list(jieba.cut(answer)):
-        if idf(e) >= 3.0:
+        if e not in string.whitespace+string.punctuation and idf(e) >= 3.0:
             res.append(e)
     return res
 
-@logging_util
+import json, math
+idf_dict = json.load(open("./idf.dict"))
 def idf(token):
-    import json, math
-    idf_dict = json.loads("./idf.dict")
     article_count = 1294233
     def inner():
         return math.log(article_count / idf_dict.get(token, 1))

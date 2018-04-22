@@ -5,7 +5,6 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--mode", help="running mode: rerank, entity", default="rerank", type=str)
 
-
 parser.add_argument("-v", "--verbose", help="output verbose information", action="store_true")
 parser.add_argument("-d", "--debug", help="print more information in debug mode", action="store_true")
 parser.add_argument("--max_p", help="load max passage len", default=450, type=int)
@@ -109,7 +108,8 @@ class DataHandler:
     def get_bidaf_by_id(self, id):
         return self.bidaf_result[id]
     
-data_handler = DataHandler()
+if args.mode == "rerank":
+    data_handler = DataHandler()
 
 
 def write(result):
@@ -181,9 +181,11 @@ if __name__ == "__main__":
     elif args.mode == "entity":
         with open(args.input) as input:
             res = []
-            for line in input:
+            for i, line in enumerate(input, 1):
+                if args.verbose and i % 3000 == 0: logger.info("ENTITY NOW %s lines" % i)
                 d = json.loads(line)
                 d["entity_answers"] = entity(d["answers"][0]) if d["question_type"] == "ENTITY" else [[]]
+                if args.debug and d["entity_answers"] != [[]]: logger.info(d["entity_answers"])
                 res.append(d)
         with open(args.output, "w") as output:
-            output.write("\n".join([json.dumps(d) for d in res]))
+            output.write("\n".join([json.dumps(d, ensure_ascii=False) for d in res]))
