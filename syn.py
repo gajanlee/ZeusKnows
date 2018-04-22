@@ -145,7 +145,7 @@ def _get_best(*ans_jsons):
     
     del ans_jsons[0]["question"]
     if len(scores) == 0: print(ans_jsons); ans_jsons[0]["answers"] = ans_jsons[1]["answers"][0]; stat[1] += 1
-    else: ans_jsons[0]["answers"] = [s[1] for s in scores[:2]]; stat[scores[0][2]] += 1
+    else: ans_jsons[0]["answers"] = [scores[0][1]]; """[s[1] for s in scores[:2]]"""; stat[scores[0][2]] += 1
     return ans_jsons[0]
     
         
