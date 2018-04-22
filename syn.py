@@ -3,11 +3,16 @@ import json, time
 import argparse
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--mode", help="running mode: rerank, entity", default="rerank", type=str)
+
+
 parser.add_argument("-v", "--verbose", help="output verbose information", action="store_true")
 parser.add_argument("-d", "--debug", help="print more information in debug mode", action="store_true")
 parser.add_argument("--max_p", help="load max passage len", default=450, type=int)
 parser.add_argument("--r_net", help="r_net result file path", default="./res/search.res", type=str)
 parser.add_argument("--bidaf", help="bidaf result file paths, a list of items", nargs="*", default="../../09result.json", type=str)
+
+parser.add_argument("--input", help="unentity answer file", default="unentity.json") # if mode is entity answer, it is necessary
 parser.add_argument("--output", help="synthetic result output file path", default=str(time.localtime(time.time()).tm_mday)+"result.json")   # as 20result.json
 args = parser.parse_args()
 
@@ -146,6 +151,7 @@ def _get_best(*ans_jsons):
     del ans_jsons[0]["question"]
     if len(scores) == 0: print(ans_jsons); ans_jsons[0]["answers"] = ans_jsons[1]["answers"][0]; stat[1] += 1
     else: ans_jsons[0]["answers"] = [scores[0][1]]; """[s[1] for s in scores[:2]]"""; stat[scores[0][2]] += 1
+    # ans_jsons[0]["entity_answers"] = entity(ans_jsons[0]["answers"][0]), pypy3 doesn't have jieba module
     return ans_jsons[0]
     
         
@@ -169,7 +175,15 @@ def rerank(result):
 
 
 if __name__ == "__main__":
-    rerank(data_handler.r_net_result)
-    logger.info("Selected: R-net / Bidaf ==> %s / %s" % (stat[0], stat[1]))
-
-
+    if args.mode == "rerank":
+        rerank(data_handler.r_net_result)
+        logger.info("Selected: R-net / Bidaf ==> %s / %s" % (stat[0], stat[1]))
+    elif args.mode == "entity":
+        with open(args.input) as input:
+            res = []
+            for line in input:
+                d = json.loads(line)
+                d["entity_answers"] = entity(d["answers"][0]) if d["question_type"] == "ENTITY" else [[]]
+                res.append(d)
+        with open(args.output, "w") as output:
+            output.write("\n".join([json.dumps(d) for d in res]))

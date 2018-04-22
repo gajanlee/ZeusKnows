@@ -1,5 +1,19 @@
 from rouge_metric.rouge import Rouge
 
+import logging
+logger = logging.getLogger("synethsis answer")
+logging.basicConfig(level = logging.DEBUG, 
+                    format = "%(asctime)s : %(levelname)s  %(message)s",
+                    datefmt = "%Y-%m-%d %A %H:%M:%S")
+from functools import wraps
+def logging_util(func):
+    @wraps(func)
+    def with_logging(*args, **kwargs):
+        logger.info("Starting %s, args: %s" % (func.__name__, args[1:]))
+        return func(*args, **kwargs)
+    return with_logging
+
+
 def StopSym(char):
     return char in ["。", "！", "？", "..."]
 
@@ -44,17 +58,27 @@ def score(s1, s2):
     """
     return rouge.calc_score([s1], [s2])
 
-import logging
-logger = logging.getLogger("synethsis answer")
-logging.basicConfig(level = logging.DEBUG, 
-                    format = "%(asctime)s : %(levelname)s  %(message)s",
-                    datefmt = "%Y-%m-%d %A %H:%M:%S")
+def entity(answer):
+    """
+    answer: string, selected answer
+    return:
+        [a list of entity answers]
+    """
+    import jieba
+    res = []
+    for e in list(jieba.cut(answer)):
+        if idf(e) >= 3.0:
+            res.append(e)
+    return res
 
-from functools import wraps
-def logging_util(func):
-    @wraps(func)
-    def with_logging(*args, **kwargs):
-        logger.info("Starting %s, args: %s" % (func.__name__, args[1:]))
-        return func(*args, **kwargs)
-    return with_logging
+@logging_util
+def idf(token):
+    import json, math
+    idf_dict = json.loads("./idf.dict")
+    article_count = 1294233
+    def inner():
+        return math.log(article_count / idf_dict.get(token, 1))
+    return inner()
+
+
 

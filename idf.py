@@ -1,7 +1,7 @@
 import json
 f = open("large_pre.dat")
 idf = {}
-
+# article_count is 1294233
 for i, line in enumerate(f, 1):
     words = line[:-1].split(" ")
     ex = {}
