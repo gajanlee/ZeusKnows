@@ -67,9 +67,9 @@ def entity(answer):
     import jieba, string
     res = []
     for e in list(jieba.cut(answer)):
-        if e not in string.whitespace+string.punctuation and idf(e) >= 3.0:
+        if e not in string.whitespace+string.punctuation and idf(e) >= 5.6: # approximately less than 5000
             res.append(e)
-    return res
+    return [res]
 
 import json, math
 idf_dict = json.load(open("./idf.dict"))
