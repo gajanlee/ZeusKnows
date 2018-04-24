@@ -7,9 +7,11 @@ logging.basicConfig(level = logging.DEBUG,
                     datefmt = "%Y-%m-%d %A %H:%M:%S")
 from functools import wraps
 def logging_util(func):
+    """A loggin decorater, log the filename and args when the function running.
+    """
     @wraps(func)
     def with_logging(*args, **kwargs):
-        logger.info("Starting %s, args: %s" % (func.__name__, args[1:]))
+        logger.info("Starting %s, args: %s" % (func.__name__, args))
         return func(*args, **kwargs)
     return with_logging
 
@@ -79,5 +81,13 @@ def idf(token):
         return math.log(article_count / idf_dict.get(token, 1))
     return inner()
 
+@logging_util
+def load_result_file(path):
+    """Load Dureader format file to memory.
+    ---
+    rtype: json, key is question_id, value is data body json
+    """
+    with open(path) as r:
+        return {json.loads(line)["question_id"]: json.loads(line) for line in r}
 
 

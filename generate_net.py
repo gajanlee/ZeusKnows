@@ -1,5 +1,7 @@
 from __init__ import *
 from copy import copy
+from bs4 import BeautifulSoup
+import jieba
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -23,11 +25,10 @@ class Process:
         for _file, _mode in zip([args.data_dir + "{tp}set/search.{tp}.json".format(tp=tp), args.data_dir + "{tp}set/zhidao.{tp}.json".format(tp=tp)], ["SEARCH", "ZHIDAO"]):
             with open(_file) as r:
                 for i, line in enumerate(r, 1):
-                    if tp == "test": d = self.test_process(json.loads(line))
+                    if tp in ["test", "test2"]: d = self.test_process(json.loads(line))
                     elif tp in ["train", "dev"]: d = self.train_process(json.loads(line))
                     if d is None: continue
-                    if tp != "test":
-                        
+                    if tp not in ["test", "test2"]:
                         [self.writers[_m].write(json.dumps(d, ensure_ascii=False) + "\n") for _m in [_mode, "TOTAL"]]
                     else:
                         #res += d
@@ -71,6 +72,7 @@ class Process:
         for doc in data["documents"]:
             p = []
             for para in doc["segmented_paragraphs"]:
+                if len(para) and para[0] == "<": para = list(jieba.cut(BeautifulSoup("".join(para), "html.parser").text))
                 p += para
             
             format["segmented_p"] = p

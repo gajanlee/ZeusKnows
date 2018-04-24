@@ -3,7 +3,7 @@ import json, time
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--mode", help="running mode: rerank, entity", default="rerank", type=str)
+parser.add_argument("--mode", help="running mode: rerank, entity, compare", default="rerank", type=str)
 
 parser.add_argument("-v", "--verbose", help="output verbose information", action="store_true")
 parser.add_argument("-d", "--debug", help="print more information in debug mode", action="store_true")
@@ -13,6 +13,8 @@ parser.add_argument("--bidaf", help="bidaf result file paths, a list of items", 
 
 parser.add_argument("--input", help="unentity answer file", default="unentity.json") # if mode is entity answer, it is necessary
 parser.add_argument("--output", help="synthetic result output file path", default=str(time.localtime(time.time()).tm_mday)+"result.json")   # as 20result.json
+
+parser.add_argument("--files", help="compared files", nargs="*", default="result.json", type=str)
 args = parser.parse_args()
 
 
@@ -35,8 +37,9 @@ class DataHandler:
         self.r_net_result = {}     # It stores R-net model result (after synthesis).
 
         self.load_test_data("./total.test.net.json")
-        self.load_test_result(args.r_net)
-        self.load_bidaf_result(args.bidaf)
+        if args.mode == "rerank":
+            self.load_test_result(args.r_net)
+            self.load_bidaf_result(args.bidaf)
 
     @logging_util
     def load_test_data(self, path):
@@ -47,7 +50,7 @@ class DataHandler:
             for i, line in enumerate(f, 1):
                 if args.verbose and i % 10000 == 0: logger.info("Now Line %s" % i)
                 data = json.loads(line)
-                if len(data["segmented_p"]) > args.max_p: continue
+                # if len(data["segmented_p"]) > args.max_p: print(data["question_id"]);continue
                 if data["question_id"] not in self.lookup:
                     del data["segmented_question"], data["segmented_paragraph"]
                     del data["char_question"], data["char_paragraph"]
@@ -107,8 +110,11 @@ class DataHandler:
 
     def get_bidaf_by_id(self, id):
         return self.bidaf_result[id]
+
+    def get_question_by_qid(self, q_id):
+        return "".join(self.lookup[q_id]["segmented_q"])
     
-if args.mode == "rerank":
+if args.mode in ["rerank", "compare"]:
     data_handler = DataHandler()
 
 
@@ -137,13 +143,13 @@ def _get_best(*ans_jsons):
         # anses.extend(ans_json["answers"])
     if args.debug:
         print(anses)
-    scores = []
+    scores = []; q = "".join(ans_jsons[0]["question"])
     for i, (a1, _bl) in enumerate(anses):
         scr = 0
         for j, (a2, _) in enumerate(anses):
             if i == j: continue
             scr += score(a1, a2)
-        scores.append((scr, a1, _bl))
+        scores.append((scr + score(a1, q), a1, _bl))
     scores.sort(key=lambda x: x[0], reverse=True)
     if args.debug:
         print(scores, "\n")
@@ -173,6 +179,13 @@ def rerank(result):
     logger.info("R-net / Bidaf ==> %s / %s" % (i, 60000-i))
     write(res)
 
+def compare(file1, file2):
+    w = open(args.output, "w")
+    logger.info("Writer Compared Result File to path: " + args.output)
+    f1 = load_result_file(file1)
+    f2 = load_result_file(file2)
+    w.write("\n".join([json.dumps({"question": data_handler.get_question_by_qid(q_id), file1: f1[q_id]["answers"][0], file2: f2[q_id]["answers"][0]}, ensure_ascii=False) for q_id, body in f1.items() if f2[q_id]["answers"][0] != body["answers"][0]]))
+    w.close()
 
 if __name__ == "__main__":
     if args.mode == "rerank":
@@ -189,3 +202,6 @@ if __name__ == "__main__":
                 res.append(d)
         with open(args.output, "w") as output:
             output.write("\n".join([json.dumps(d, ensure_ascii=False) for d in res]))
+    elif args.mode == "compare":
+        assert len(args.files) == 2
+        compare(*args.files)
