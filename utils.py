@@ -58,7 +58,7 @@ def score(s1, s2):
     s1, s2: strings.
     s1 is candidate string, s2 is reference string.
     """
-    return rouge.calc_score([s1], [s2])
+    return rouge.calc_score([s1], [s2]) if len(s1) and len(s2) else 0
 
 def entity(answer):
     """

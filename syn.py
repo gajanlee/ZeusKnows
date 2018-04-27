@@ -3,7 +3,7 @@ import json, time
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--mode", help="running mode: rerank, entity, compare", default="rerank", type=str)
+parser.add_argument("--mode", help="running mode: rerank, entity, compare, ensemble(final ensemble)", default="rerank", type=str)
 
 parser.add_argument("-v", "--verbose", help="output verbose information", action="store_true")
 parser.add_argument("-d", "--debug", help="print more information in debug mode", action="store_true")
@@ -36,7 +36,7 @@ class DataHandler:
         self.lookup = {}    # It is used to find passage and question for "R-net" model
         self.r_net_result = {}     # It stores R-net model result (after synthesis).
 
-        self.load_test_data("./total.test.net.json")
+        self.load_test_data("./total.test2.net.json")
         if args.mode == "rerank":
             self.load_test_result(args.r_net)
             self.load_bidaf_result(args.bidaf)
@@ -83,7 +83,7 @@ class DataHandler:
                     self.r_net_result[d["question_id"]] = {
                         "question_id": d["question_id"],
                         "question_type": self.lookup[d["question_id"]]["question_type"],
-                        "question": self.lookup[d["question_id"]]["segmented_q"],
+                        #"question": self.lookup[d["question_id"]]["segmented_q"],
                         "answers": [ans], 
                         "yesno_answers": [],
                         "entity_answers": [[]],
@@ -114,7 +114,7 @@ class DataHandler:
     def get_question_by_qid(self, q_id):
         return "".join(self.lookup[q_id]["segmented_q"])
     
-if args.mode in ["rerank", "compare"]:
+if args.mode in ["rerank", "compare", "ensemble"]:
     data_handler = DataHandler()
 
 
@@ -143,7 +143,8 @@ def _get_best(*ans_jsons):
         # anses.extend(ans_json["answers"])
     if args.debug:
         print(anses)
-    scores = []; q = "".join(ans_jsons[0]["question"])
+    scores = []; 
+    q = "".join(data_handler.lookup[ans_jsons[0]["question_id"]]["segmented_q"]) if ans_jsons[0]["question_id"] in data_handler.lookup else ""
     for i, (a1, _bl) in enumerate(anses):
         scr = 0
         for j, (a2, _) in enumerate(anses):
@@ -154,7 +155,7 @@ def _get_best(*ans_jsons):
     if args.debug:
         print(scores, "\n")
     
-    del ans_jsons[0]["question"]
+    #del ans_jsons[0]["question"]
     if len(scores) == 0: print(ans_jsons); ans_jsons[0]["answers"] = ans_jsons[1]["answers"][0]; stat[1] += 1
     else: ans_jsons[0]["answers"] = [scores[0][1]]; """[s[1] for s in scores[:2]]"""; stat[scores[0][2]] += 1
     # ans_jsons[0]["entity_answers"] = entity(ans_jsons[0]["answers"][0]), pypy3 doesn't have jieba module
@@ -187,6 +188,17 @@ def compare(file1, file2):
     w.write("\n".join([json.dumps({"question": data_handler.get_question_by_qid(q_id), file1: f1[q_id]["answers"][0], file2: f2[q_id]["answers"][0]}, ensure_ascii=False) for q_id, body in f1.items() if f2[q_id]["answers"][0] != body["answers"][0]]))
     w.close()
 
+def ensemble(files):
+    answer_jsons = []
+    for file in files:
+        answer_jsons.append(load_result_file(file))
+        logger.info("Process done " + file)
+    res = {}
+    for i, _id in enumerate(answer_jsons[0], 1):
+        res[_id] = _get_best(*[r[_id] for r in answer_jsons])
+        if args.verbose and i % 1000 == 0: logger.info("Reranking count %s / 60000" % i)
+    write(res)
+        
 if __name__ == "__main__":
     if args.mode == "rerank":
         rerank(data_handler.r_net_result)
@@ -205,3 +217,5 @@ if __name__ == "__main__":
     elif args.mode == "compare":
         assert len(args.files) == 2
         compare(*args.files)
+    elif args.mode == "ensemble":
+        ensemble(args.files)
