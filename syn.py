@@ -156,7 +156,7 @@ def _get_best(*ans_jsons):
         print(scores, "\n")
     
     #del ans_jsons[0]["question"]
-    if len(scores) == 0: print(ans_jsons); ans_jsons[0]["answers"] = ans_jsons[1]["answers"][0]; stat[1] += 1
+    if len(scores) == 0: print(ans_jsons); ans_jsons[0]["answers"] = [ans_jsons[1]["answers"][0]]; stat[1] += 1
     else: ans_jsons[0]["answers"] = [scores[0][1]]; """[s[1] for s in scores[:2]]"""; stat[scores[0][2]] += 1
     # ans_jsons[0]["entity_answers"] = entity(ans_jsons[0]["answers"][0]), pypy3 doesn't have jieba module
     return ans_jsons[0]
