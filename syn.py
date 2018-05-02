@@ -3,8 +3,7 @@ import json, time
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--mode", help="running mode: rerank, entity", default="rerank", type=str)
-
+parser.add_argument("--mode", help="running mode: rerank, entity, compare, ensemble(final ensemble)", default="rerank", type=str)
 
 parser.add_argument("-v", "--verbose", help="output verbose information", action="store_true")
 parser.add_argument("-d", "--debug", help="print more information in debug mode", action="store_true")
@@ -14,6 +13,8 @@ parser.add_argument("--bidaf", help="bidaf result file paths, a list of items", 
 
 parser.add_argument("--input", help="unentity answer file", default="unentity.json") # if mode is entity answer, it is necessary
 parser.add_argument("--output", help="synthetic result output file path", default=str(time.localtime(time.time()).tm_mday)+"result.json")   # as 20result.json
+
+parser.add_argument("--files", help="compared files", nargs="*", default="result.json", type=str)
 args = parser.parse_args()
 
 
@@ -35,9 +36,10 @@ class DataHandler:
         self.lookup = {}    # It is used to find passage and question for "R-net" model
         self.r_net_result = {}     # It stores R-net model result (after synthesis).
 
-        self.load_test_data("./total.test.net.json")
-        self.load_test_result(args.r_net)
-        self.load_bidaf_result(args.bidaf)
+        self.load_test_data("./total.test2.net.json")
+        if args.mode == "rerank":
+            self.load_test_result(args.r_net)
+            self.load_bidaf_result(args.bidaf)
 
     @logging_util
     def load_test_data(self, path):
@@ -48,7 +50,7 @@ class DataHandler:
             for i, line in enumerate(f, 1):
                 if args.verbose and i % 10000 == 0: logger.info("Now Line %s" % i)
                 data = json.loads(line)
-                if len(data["segmented_p"]) > args.max_p: continue
+                # if len(data["segmented_p"]) > args.max_p: print(data["question_id"]);continue
                 if data["question_id"] not in self.lookup:
                     del data["segmented_question"], data["segmented_paragraph"]
                     del data["char_question"], data["char_paragraph"]
@@ -81,7 +83,7 @@ class DataHandler:
                     self.r_net_result[d["question_id"]] = {
                         "question_id": d["question_id"],
                         "question_type": self.lookup[d["question_id"]]["question_type"],
-                        "question": self.lookup[d["question_id"]]["segmented_q"],
+                        #"question": self.lookup[d["question_id"]]["segmented_q"],
                         "answers": [ans], 
                         "yesno_answers": [],
                         "entity_answers": [[]],
@@ -108,8 +110,12 @@ class DataHandler:
 
     def get_bidaf_by_id(self, id):
         return self.bidaf_result[id]
+
+    def get_question_by_qid(self, q_id):
+        return "".join(self.lookup[q_id]["segmented_q"])
     
-data_handler = DataHandler()
+if args.mode in ["rerank", "compare", "ensemble"]:
+    data_handler = DataHandler()
 
 
 def write(result):
@@ -137,19 +143,20 @@ def _get_best(*ans_jsons):
         # anses.extend(ans_json["answers"])
     if args.debug:
         print(anses)
-    scores = []
+    scores = []; 
+    q = "".join(data_handler.lookup[ans_jsons[0]["question_id"]]["segmented_q"]) if ans_jsons[0]["question_id"] in data_handler.lookup else ""
     for i, (a1, _bl) in enumerate(anses):
         scr = 0
         for j, (a2, _) in enumerate(anses):
             if i == j: continue
             scr += score(a1, a2)
-        scores.append((scr, a1, _bl))
+        scores.append((scr + score(a1, q), a1, _bl))
     scores.sort(key=lambda x: x[0], reverse=True)
     if args.debug:
         print(scores, "\n")
     
-    del ans_jsons[0]["question"]
-    if len(scores) == 0: print(ans_jsons); ans_jsons[0]["answers"] = ans_jsons[1]["answers"][0]; stat[1] += 1
+    #del ans_jsons[0]["question"]
+    if len(scores) == 0: print(ans_jsons); ans_jsons[0]["answers"] = [ans_jsons[1]["answers"][0]]; stat[1] += 1
     else: ans_jsons[0]["answers"] = [scores[0][1]]; """[s[1] for s in scores[:2]]"""; stat[scores[0][2]] += 1
     # ans_jsons[0]["entity_answers"] = entity(ans_jsons[0]["answers"][0]), pypy3 doesn't have jieba module
     return ans_jsons[0]
@@ -173,7 +180,25 @@ def rerank(result):
     logger.info("R-net / Bidaf ==> %s / %s" % (i, 60000-i))
     write(res)
 
+def compare(file1, file2):
+    w = open(args.output, "w")
+    logger.info("Writer Compared Result File to path: " + args.output)
+    f1 = load_result_file(file1)
+    f2 = load_result_file(file2)
+    w.write("\n".join([json.dumps({"question": data_handler.get_question_by_qid(q_id), file1: f1[q_id]["answers"][0], file2: f2[q_id]["answers"][0]}, ensure_ascii=False) for q_id, body in f1.items() if f2[q_id]["answers"][0] != body["answers"][0]]))
+    w.close()
 
+def ensemble(files):
+    answer_jsons = []
+    for file in files:
+        answer_jsons.append(load_result_file(file))
+        logger.info("Process done " + file)
+    res = {}
+    for i, _id in enumerate(answer_jsons[0], 1):
+        res[_id] = _get_best(*[r[_id] for r in answer_jsons])
+        if args.verbose and i % 1000 == 0: logger.info("Reranking count %s / 60000" % i)
+    write(res)
+        
 if __name__ == "__main__":
     if args.mode == "rerank":
         rerank(data_handler.r_net_result)
@@ -181,9 +206,16 @@ if __name__ == "__main__":
     elif args.mode == "entity":
         with open(args.input) as input:
             res = []
-            for line in input:
+            for i, line in enumerate(input, 1):
+                if args.verbose and i % 3000 == 0: logger.info("ENTITY NOW %s lines" % i)
                 d = json.loads(line)
                 d["entity_answers"] = entity(d["answers"][0]) if d["question_type"] == "ENTITY" else [[]]
+                if args.debug and d["entity_answers"] != [[]]: logger.info(d["entity_answers"])
                 res.append(d)
         with open(args.output, "w") as output:
-            output.write("\n".join([json.dumps(d) for d in res]))
+            output.write("\n".join([json.dumps(d, ensure_ascii=False) for d in res]))
+    elif args.mode == "compare":
+        assert len(args.files) == 2
+        compare(*args.files)
+    elif args.mode == "ensemble":
+        ensemble(args.files)

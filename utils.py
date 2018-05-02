@@ -7,9 +7,11 @@ logging.basicConfig(level = logging.DEBUG,
                     datefmt = "%Y-%m-%d %A %H:%M:%S")
 from functools import wraps
 def logging_util(func):
+    """A loggin decorater, log the filename and args when the function running.
+    """
     @wraps(func)
     def with_logging(*args, **kwargs):
-        logger.info("Starting %s, args: %s" % (func.__name__, args[1:]))
+        logger.info("Starting %s, args: %s" % (func.__name__, args))
         return func(*args, **kwargs)
     return with_logging
 
@@ -56,7 +58,7 @@ def score(s1, s2):
     s1, s2: strings.
     s1 is candidate string, s2 is reference string.
     """
-    return rouge.calc_score([s1], [s2])
+    return rouge.calc_score([s1], [s2]) if len(s1) and len(s2) else 0
 
 def entity(answer):
     """
@@ -64,21 +66,28 @@ def entity(answer):
     return:
         [a list of entity answers]
     """
-    import jieba
+    import jieba, string
     res = []
     for e in list(jieba.cut(answer)):
-        if idf(e) >= 3.0:
+        if e not in string.whitespace+string.punctuation and idf(e) >= 5.6: # approximately less than 5000
             res.append(e)
-    return res
+    return [res]
 
-@logging_util
+import json, math
+idf_dict = json.load(open("./idf.dict"))
 def idf(token):
-    import json, math
-    idf_dict = json.loads("./idf.dict")
     article_count = 1294233
     def inner():
         return math.log(article_count / idf_dict.get(token, 1))
     return inner()
 
+@logging_util
+def load_result_file(path):
+    """Load Dureader format file to memory.
+    ---
+    rtype: json, key is question_id, value is data body json
+    """
+    with open(path) as r:
+        return {json.loads(line)["question_id"]: json.loads(line) for line in r}
 
 
