@@ -36,6 +36,7 @@ class Params():
     zoneout = None # zoneout probability, if None, don't use zoneout
     optimizer = "adam" # Options: ["adadelta", "adam", "gradientdescent", "adagrad"]
     batch_size = 50 if mode is not "test" else 100# Size of the mini-batch for training
+    batch_size = 1 if mode is "demo" else batch_size
     save_steps = 50 # Save the model at every 50 steps
     clip = True # clip gradient norm
     norm = 5.0 # global norm

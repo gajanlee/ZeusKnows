@@ -13,7 +13,7 @@ from evaluate import *
 import numpy as np
 import cPickle as pickle
 #from process import *
-#from demo import Demo
+from demo import Demo
 import os
 
 import sys  

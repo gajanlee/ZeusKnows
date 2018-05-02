@@ -7,8 +7,9 @@ from bottle import route, run
 import threading
 
 from params import Params
-from process import *
+#from process import *
 from time import sleep
+from model import Vocabulary
 
 app = bottle.Bottle()
 query = []
@@ -50,7 +51,8 @@ class Demo(object):
 
     def demo_backend(self, model, run_event):
         global query, response
-        dict_ = pickle.load(open(Params.data_dir + "dictionary.pkl","r"))
+        #dict_ = pickle.load(open(Params.data_dir + "dictionary.pkl","r"))
+        dict_ = Vocabulary()
 
         with model.graph.as_default():
             sv = tf.train.Supervisor()
