@@ -4,3 +4,5 @@ tqdm==4.15.0
 spacy==2.0.0
 tensorflow==1.2
 bottle
+requests
+bs4
