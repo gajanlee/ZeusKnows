@@ -10,7 +10,7 @@ from params import Params
 import numpy as np
 import tensorflow as tf
 #from process import *
-from sklearn.model_selection import train_test_split
+#from sklearn.model_selection import train_test_split
 
 # Adapted from the `sugartensor` code.
 # https://github.com/buriburisuri/sugartensor/blob/master/sugartensor/sg_queue.py

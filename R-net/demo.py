@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
+from __future__ import print_function
 
 import tensorflow as tf
 import bottle
@@ -9,7 +10,7 @@ import threading
 from params import Params
 #from process import *
 from time import sleep
-from model import Vocabulary
+from params import Vocabulary
 
 app = bottle.Bottle()
 query = []
@@ -46,7 +47,7 @@ class Demo(object):
             while 1:
                 sleep(.1)
         except KeyboardInterrupt:
-            print "Closing server..."
+            print("Closing server...")
             run_event.clear()
 
     def demo_backend(self, model, run_event):

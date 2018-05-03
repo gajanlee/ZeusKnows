@@ -17,7 +17,7 @@ from demo import Demo
 import os
 
 import sys  
-reload(sys)  
+reload(sys)
 sys.setdefaultencoding('utf8')   
 
 optimizer_factory = {"adadelta":tf.train.AdadeltaOptimizer,

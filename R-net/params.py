@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+#/usr/bin/python2
+from __future__ import print_function
+
+import sys  
+reload(sys)  
+sys.setdefaultencoding('utf8')   
+
 class Params():
 
     # data
@@ -30,7 +38,7 @@ class Params():
     # Training
 	# NOTE: To use demo, put batch_size == 1
     #mode = "gen_rank" # case-insensitive options: ["train", "test", "debug"]
-    mode = "train"
+    mode = "demo"
     #mode = "train"
     dropout = 0.2 # dropout probability, if None, don't use dropout
     zoneout = None # zoneout probability, if None, don't use zoneout
@@ -64,4 +72,53 @@ class Params():
         train_dir = data_dir + "tag_id_train.stat"
         dev_dir = "tag_id_dev.stat"
         test_dir = "rank_id.stat"
+
+import json
+class Vocabulary:
+    def __init__(self):
+        self.vocab_dict, self.char_dict = {}, {}
+        self.load_vocab_dict("../vocab.dict")
+        self.load_char_dict("../char.dict")
+        print("vocab_dict size is ", len(self.vocab_dict))
+        print("char_dict size is ", len(self.char_dict))
+
+    def load_vocab_dict(self, vocab_path):
+        vocab_dict = json.load(open(vocab_path))
+        for vocab, _id in vocab_dict.items():
+            self.vocab_dict[_id] = vocab
+        print("=======>", self.vocab_dict[100])
+
+        #with open(vocab_path) as fp: 
+            #for i, line in enumerate(fp):
+                #self.vocab_dict[i] = line.split(" ")[0] 
+                #self.vocab_dict[res[1]] = int(res[0])
+
+    def load_char_dict(self, char_path):
+        char_dict = json.load(open(char_path))
+        for char, _id in char_dict.items():
+            self.char_dict[_id] = char
+        print("======>", self.char_dict[100])
+        #with open(char_path) as fp: 
+            #for i, line in enumerate(fp, 1): 
+                #self.char_dict[line[:-1]] = i 
+                #self.char_dict[i] = line.split(" ")[0]
+                #res = line.split(' ')
+                #print(res[0], '+', res[1])
+                #self.char_dict[res[0]] = int(res[1])
+                #self.char_dict[int(res[1])] = res[0]
+
+    def ind2word(self,ids):
+        output = []
+        for i in ids:
+            output.append(self.vocab_dict[i])
+        return " ".join(output)
+
+    def ind2char(self,ids):
+        output = []
+        for i in ids:
+            for j in i:
+                output.append(self.char_dict[j])
+            output.append(" ")
+        return "".join(output)
+
 
