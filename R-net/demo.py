@@ -11,6 +11,8 @@ from params import Params
 #from process import *
 from time import sleep
 from params import Vocabulary
+from ZeusKnows.docs import get_docs
+from ZeusKnow import vocabulary
 
 app = bottle.Bottle()
 query = []
@@ -24,9 +26,7 @@ def home():
 
 @app.get('/answer')
 def answer():
-    from docs import getDocs
-    docs = getDocs(request.query.question)
-    for doc in docs:
+    for doc in get_docs(request.query.question):
         print(doc.passage, doc.title)
     print(question)
     passage = bottle.request.json['passage']
@@ -76,6 +76,23 @@ class Demo(object):
                         passage_t = tokenize_corenlp(query[0])
                         response = " ".join(passage_t[ids[0]:ids[1]])
                         query = []
+
+import jieba
+def realtime_process(question, passages):
+    passage_word_ids, question_word_ids = [], []
+    passage_char_ids, question_char_ids = [], []
+    passage_word_len, question_word_len = [], []
+    passage_char_len, question_char_len = [], []
+    indices = []
+    tags = []
+    ids = []    # question's id
+
+    for passage in passages:
+        list(jieba.cut(question))
+
+    
+    
+    return data, shapes
 
 if __name__ == "__main__":
     app.run(port=8081, host='0.0.0.0')

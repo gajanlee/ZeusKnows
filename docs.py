@@ -64,6 +64,12 @@ def get_html_content_soup(url):
     return BeautifulSoup(unicode(requests.get(url).content, "gb2312", "ignore"), "html5lib")   # 忽略非gb2312的编码(ignore)
 
 
+"""
+    Exterior interfaces
+"""
+def get_docs(keyword):
+    return Zhidao_Downloader("浦发银行电话号码").start()
+
 if __name__ == "__main__":
     for doc in Zhidao_Downloader("浦发银行电话号码").start():
         print(doc.title)

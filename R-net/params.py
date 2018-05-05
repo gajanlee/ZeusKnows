@@ -97,15 +97,6 @@ class Vocabulary:
         char_dict = json.load(open(char_path))
         for char, _id in char_dict.items():
             self.char_dict[_id] = char
-        print("======>", self.char_dict[100])
-        #with open(char_path) as fp: 
-            #for i, line in enumerate(fp, 1): 
-                #self.char_dict[line[:-1]] = i 
-                #self.char_dict[i] = line.split(" ")[0]
-                #res = line.split(' ')
-                #print(res[0], '+', res[1])
-                #self.char_dict[res[0]] = int(res[1])
-                #self.char_dict[int(res[1])] = res[0]
 
     def ind2word(self,ids):
         output = []
