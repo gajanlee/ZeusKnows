@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 import bottle
-from bottle import route, run
+from bottle import route, run, request
 import threading
 
 from params import Params
@@ -22,8 +22,13 @@ def home():
         html = fl.read()
         return html
 
-@app.post('/answer')
+@app.get('/answer')
 def answer():
+    from docs import getDocs
+    docs = getDocs(request.query.question)
+    for doc in docs:
+        print(doc.passage, doc.title)
+    print(question)
     passage = bottle.request.json['passage']
     question = bottle.request.json['question']
     # if not passage or not question:
@@ -71,3 +76,6 @@ class Demo(object):
                         passage_t = tokenize_corenlp(query[0])
                         response = " ".join(passage_t[ids[0]:ids[1]])
                         query = []
+
+if __name__ == "__main__":
+    app.run(port=8081, host='0.0.0.0')
