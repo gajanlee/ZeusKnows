@@ -48,15 +48,6 @@ class Vocabulary:
         char_dict = json.load(open(char_path))
         for char, _id in char_dict.items():
             self.char_dict[_id] = char
-        print("======>", self.char_dict[100])
-        #with open(char_path) as fp: 
-            #for i, line in enumerate(fp, 1): 
-                #self.char_dict[line[:-1]] = i 
-                #self.char_dict[i] = line.split(" ")[0]
-                #res = line.split(' ')
-                #print(res[0], '+', res[1])
-                #self.char_dict[res[0]] = int(res[1])
-                #self.char_dict[int(res[1])] = res[0]
 
     def ind2word(self,ids):
         output = []
@@ -81,22 +72,23 @@ class Model(object):
         with self.graph.as_default():
             self.global_step = tf.Variable(0, name='global_step', trainable=False)
             if demo:
+                # batch isn't 1, it will be a batch of passage        
                 self.passage_w = tf.placeholder(tf.int32,
-                                        [1, Params.max_p_len,],"passage_w")
+                                        [Params.batch_size, Params.max_p_len,],"passage_w")
                 self.question_w = tf.placeholder(tf.int32,
-                                        [1, Params.max_q_len,],"passage_q")
+                                        [Params.batch_size, Params.max_q_len,],"passage_q")
                 self.passage_c = tf.placeholder(tf.int32,
-                                        [1, Params.max_p_len,Params.max_char_len],"passage_pc")
+                                        [Params.batch_size, Params.max_p_len,Params.max_char_len],"passage_pc")
                 self.question_c = tf.placeholder(tf.int32,
-                                        [1, Params.max_q_len,Params.max_char_len],"passage_qc")
+                                        [Params.batch_size, Params.max_q_len,Params.max_char_len],"passage_qc")
                 self.passage_w_len_ = tf.placeholder(tf.int32,
-                                        [1,1],"passage_w_len_")
+                                        [Params.batch_size,1],"passage_w_len_")
                 self.question_w_len_ = tf.placeholder(tf.int32,
-                                        [1,1],"question_w_len_")
+                                        [Params.batch_size,1],"question_w_len_")
                 self.passage_c_len = tf.placeholder(tf.int32,
-                                        [1, Params.max_p_len],"passage_c_len")
+                                        [Params.batch_size, Params.max_p_len],"passage_c_len")
                 self.question_c_len = tf.placeholder(tf.int32,
-                                        [1, Params.max_q_len],"question_c_len")
+                                        [Params.batch_size, Params.max_q_len],"question_c_len")
                 self.data = (self.passage_w,
                             self.question_w,
                             self.passage_c,
