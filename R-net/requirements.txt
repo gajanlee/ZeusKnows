@@ -6,3 +6,4 @@ tensorflow==1.2
 bottle
 requests
 bs4
+jieba

@@ -12,10 +12,10 @@ from params import Params
 from time import sleep
 from params import Vocabulary
 from ZeusKnows.docs import get_docs
-from ZeusKnow import vocabulary
+from ZeusKnows import vocabulary
 
 app = bottle.Bottle()
-query = []
+query_question, query_docs = None, None
 response = ""
 
 @app.get("/")
@@ -26,15 +26,9 @@ def home():
 
 @app.get('/answer')
 def answer():
-    for doc in get_docs(request.query.question):
-        print(doc.passage, doc.title)
-    print(question)
-    passage = bottle.request.json['passage']
-    question = bottle.request.json['question']
-    # if not passage or not question:
-    #     exit()
-    global query, response
-    query = (passage, question)
+    global query_question, query_docs
+    query_question, query_docs = request.query.question, get_docs(request.query.question)
+
     while not response:
         sleep(0.1)
     print("received response: {}".format(response))
@@ -56,7 +50,7 @@ class Demo(object):
             run_event.clear()
 
     def demo_backend(self, model, run_event):
-        global query, response
+        global query_question, query_docs, response
         #dict_ = pickle.load(open(Params.data_dir + "dictionary.pkl","r"))
         dict_ = Vocabulary()
 
@@ -66,33 +60,38 @@ class Demo(object):
                 sv.saver.restore(sess, tf.train.latest_checkpoint(Params.logdir))
                 while run_event.is_set():
                     sleep(0.1)
-                    if query:
-                        data, shapes = dict_.realtime_process(query)
+                    if query_question:
+                        data, shapes = realtime_process(query_question, query_docs)
                         fd = {m:d for i,(m,d) in enumerate(zip(model.data, data))}
                         ids = sess.run([model.output_index], feed_dict = fd)
+                        
+                        print(ids)
                         ids = ids[0][0]
                         if ids[0] == ids[1]:
                             ids[1] += 1
                         passage_t = tokenize_corenlp(query[0])
                         response = " ".join(passage_t[ids[0]:ids[1]])
-                        query = []
+                        query_question = ""     # clear the question
 
 import jieba
-def realtime_process(question, passages):
-    passage_word_ids, question_word_ids = [], []
-    passage_char_ids, question_char_ids = [], []
-    passage_word_len, question_word_len = [], []
-    passage_char_len, question_char_len = [], []
-    indices = []
-    tags = []
-    ids = []    # question's id
-
-    for passage in passages:
-        list(jieba.cut(question))
-
-    
-    
-    return data, shapes
+import numpy as np
+from data_load import ljz_load_data
+def realtime_process(question, docs):
+    datas = []
+    question_w_ids = [vocabulary.getVocabID(voca) for voca in list(jieba.cut(question))]
+    question_c_ids = [vocabulary.getCharID(char) for char in question]
+    for i, doc in enumerate(docs):
+        if i == Params.batch_size: break    # the count is satisfied batch size
+        passage = doc.passage
+        tokens = list(jieba.cut(passage))        
+        datas.append({
+            "segmented_question": question_w_ids,
+            "segmented_paragraph": [vocabulary.getVocabID(voca) for voca in tokens],
+            "char_question": question_c_ids,
+            "char_passage": [vocabulary.getCharID(char) for char in passage],
+        })
+    return ljz_load_data(datas, file=False)
 
 if __name__ == "__main__":
-    app.run(port=8081, host='0.0.0.0')
+    #app.run(port=8081, host='0.0.0.0')
+    realtime_process("", "")

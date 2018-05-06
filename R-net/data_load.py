@@ -254,7 +254,7 @@ def padding_char_len(data, max_len):
     return t
 
 import json, numpy as np
-def ljz_load_data(_file):
+def ljz_load_data(_file, file=True):
     #_file = "../../Zeus/description_id.stat"  # description
     passage_word_ids, question_word_ids = [], []
     passage_char_ids, question_char_ids = [], []
@@ -267,42 +267,48 @@ def ljz_load_data(_file):
     max_plen, max_qlen, max_clen = Params.max_p_len, Params.max_q_len, Params.max_char_len
     print("loading data dir is ", _file)
 
-    with open(_file) as fp:
-        for i, line in enumerate(fp):
-            #if i == 2000: break
-            #print(i)
-            if i % 1000 == 0:
-                print("data loading %s line" % i)
+    if file == True:
+        fp = open(_file)
+    else:
+        fp = _file
+    for i, line in enumerate(fp):
+        #if i == 2000: break
+        #print(i)
+        if i % 1000 == 0:
+            print("data loading %s line" % i)
+        if file == True:
             d = json.loads(line)
-            if len(d["segmented_paragraph"]) > max_plen or len(d["segmented_question"]) > max_qlen:
-                #print(len(d["segmented_paragraph"]), len(d["segmented_question"]))
-                continue
-            passage_word_ids.append( padding_data(d["segmented_paragraph"], max_plen))
-            question_word_ids.append( padding_data(d["segmented_question"], max_qlen))
-            passage_char_ids.append( padding_char_data(d["char_paragraph"], max_plen, max_clen, i))
-            question_char_ids.append( padding_char_data(d["char_question"], max_qlen, max_clen))
+        else:
+            d = line
+        if len(d["segmented_paragraph"]) > max_plen or len(d["segmented_question"]) > max_qlen:
+            #print(len(d["segmented_paragraph"]), len(d["segmented_question"]))
+            continue
+        passage_word_ids.append( padding_data(d["segmented_paragraph"], max_plen))
+        question_word_ids.append( padding_data(d["segmented_question"], max_qlen))
+        passage_char_ids.append( padding_char_data(d["char_paragraph"], max_plen, max_clen, i))
+        question_char_ids.append( padding_char_data(d["char_question"], max_qlen, max_clen))
 
-            passage_word_len.append([len(d["segmented_paragraph"])])
-            question_word_len.append([len(d["segmented_question"])])
-            passage_char_len.append([min(len(word), 8) for word in d["char_paragraph"]])
-            question_char_len.append([min(len(word), 8) for word in d["char_question"]])
-            if Params.mode.lower() == "prank":
-                indices.append([0, 0])
-                tags.append(d["tag"])
-            elif Params.mode.lower() == "gen_rank" or Params.mode == "test":
-                indices.append([0, 0])
-                tags.append([0])
-                ids.append([d["question_id"], d["passage_id"]])
-            elif Params.mode == "dev":
-                indices.append([d["answer_spans"][0][0], d["answer_spans"][0][1]+1])
-                tags.append([0])
-                ids.append()
-            else:
-                indices.append([d["answer_spans"][0][0], d["answer_spans"][0][1]+1])
-                tags.append([0])
-                ids.append([0,0])
-            #ids.append([d["question_id"], d["passage_id"]])
-            #ids.append([0, 0])
+        passage_word_len.append([len(d["segmented_paragraph"])])
+        question_word_len.append([len(d["segmented_question"])])
+        passage_char_len.append([min(len(word), 8) for word in d["char_paragraph"]])
+        question_char_len.append([min(len(word), 8) for word in d["char_question"]])
+        if Params.mode.lower() == "prank":
+            indices.append([0, 0])
+            tags.append(d["tag"])
+        elif Params.mode.lower() == "gen_rank" or Params.mode == "test":
+            indices.append([0, 0])
+            tags.append([0])
+            ids.append([d["question_id"], d["passage_id"]])
+        elif Params.mode == "dev":
+            indices.append([d["answer_spans"][0][0], d["answer_spans"][0][1]+1])
+            tags.append([0])
+            ids.append()
+        else:
+            indices.append([d["answer_spans"][0][0], d["answer_spans"][0][1]+1])
+            tags.append([0])
+            ids.append([0,0])
+        #ids.append([d["question_id"], d["passage_id"]])
+        #ids.append([0, 0])
         # to numpy
         
         
