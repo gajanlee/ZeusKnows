@@ -1,6 +1,7 @@
 
 class Params:
-    
+    import os
+    base_path = os.path.dirname(os.path.realpath(__file__))   
     # ------> Preprocessed Parameters
     data_files_format = "../DuReader/{mode}set/{type}.{mode}.json"
     train_files = ["../DuReader/trainset/{type}.train.json"]
@@ -9,8 +10,8 @@ class Params:
 
     # ------> Vocabulary Parameters
     wordlst_path = "word_list.dict"   # save words' list
-    vocab_path = "./vocab.dict"
-    char_path = "./char.dict"
+    vocab_path = base_path + "/vocab.dict"
+    char_path = base_path + "/char.dict"
     count_threshold = 11     # We only save count
 
     # -----> Word Embedding Parameters

@@ -19,9 +19,11 @@ class Vocabulary:
         self.vocab_id_dict = {}
         #self.load_char_dict()
         if os.path.exists(Params.vocab_path): self.load_vocab_dict()
-        else: logger.warning("NO VOCABULARY DICTIONARY!")
+        
+        else: logger.warning("NO VOCABULARY DICTIONARY!"); 
         if os.path.exists(Params.char_path): self.load_char_dict()
         else: logger.warning("NO CHARACTERIZER DICTIONARY!"); self.generate_char_dict(); 
+        
 
     # Get A Char's ID
     def getCharID(self, char, ls=False):

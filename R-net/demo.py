@@ -26,7 +26,7 @@ def home():
 
 @app.get('/answer')
 def answer():
-    global query_question, query_docs
+    global query_question, query_docs, response
     query_question, query_docs = request.query.question, get_docs(request.query.question)
 
     while not response:
@@ -64,13 +64,13 @@ class Demo(object):
                         data, shapes = realtime_process(query_question, query_docs)
                         fd = {m:d for i,(m,d) in enumerate(zip(model.data, data))}
                         ids = sess.run([model.output_index], feed_dict = fd)
-                        
                         print(ids)
                         ids = ids[0][0]
                         if ids[0] == ids[1]:
                             ids[1] += 1
-                        passage_t = tokenize_corenlp(query[0])
-                        response = " ".join(passage_t[ids[0]:ids[1]])
+                        response = list(jieba.cut(query_docs[0].passage))[ids[0]:ids[1]]
+                        
+                        # response = " ".join(passage_t[ids[0]:ids[1]])
                         query_question = ""     # clear the question
 
 import jieba
@@ -79,18 +79,21 @@ from data_load import ljz_load_data
 def realtime_process(question, docs):
     datas = []
     question_w_ids = [vocabulary.getVocabID(voca) for voca in list(jieba.cut(question))]
-    question_c_ids = [vocabulary.getCharID(char) for char in question]
+    question_c_ids = [[vocabulary.getCharID(char) for char in voca] for voca in list(jieba.cut(question))]
     for i, doc in enumerate(docs):
         if i == Params.batch_size: break    # the count is satisfied batch size
         passage = doc.passage
-        tokens = list(jieba.cut(passage))        
+        tokens = list(jieba.cut(passage))
+        print(doc.passage)        
         datas.append({
             "segmented_question": question_w_ids,
             "segmented_paragraph": [vocabulary.getVocabID(voca) for voca in tokens],
             "char_question": question_c_ids,
-            "char_passage": [vocabulary.getCharID(char) for char in passage],
+            "char_paragraph": [[vocabulary.getCharID(char) for char in voca] for voca in tokens],
+            "question_id": 0,   # Later, will transfer from client
+            "passage_id": i,
         })
-    return ljz_load_data(datas, file=False)
+    return ljz_load_data(datas[:1], file=False)
 
 if __name__ == "__main__":
     #app.run(port=8081, host='0.0.0.0')

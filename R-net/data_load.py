@@ -295,7 +295,7 @@ def ljz_load_data(_file, file=True):
         if Params.mode.lower() == "prank":
             indices.append([0, 0])
             tags.append(d["tag"])
-        elif Params.mode.lower() == "gen_rank" or Params.mode == "test":
+        elif Params.mode.lower() in ["gen_rank", "test", "demo"]:
             indices.append([0, 0])
             tags.append([0])
             ids.append([d["question_id"], d["passage_id"]])

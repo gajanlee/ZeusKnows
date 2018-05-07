@@ -41,7 +41,7 @@ class Zhidao_Downloader(Downloader):
         super(Zhidao_Downloader, self).__init__(keyword)
     
     def synthesis_url(self, keyword):
-        return 'https://zhidao.baidu.com/search?lm=0&rn=10&pn=0&fr=search&ie=gbk&word=' + keyword
+        return 'https://zhidao.baidu.com/search?lm=0&rn=10&pn=0&fr=search&ie=utf-8&word=' + keyword
     
     def start_downloading(self):
         list_soup = get_html_content_soup(self.url)
@@ -68,7 +68,7 @@ def get_html_content_soup(url):
     Exterior interfaces
 """
 def get_docs(keyword):
-    return Zhidao_Downloader("浦发银行电话号码").start()
+    return Zhidao_Downloader(keyword).start()
 
 if __name__ == "__main__":
     for doc in Zhidao_Downloader("浦发银行电话号码").start():
