@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 import tensorflow as tf
-import bottle
+import bottle, json
 from bottle import route, run, request
 import threading
 
@@ -13,10 +13,12 @@ from time import sleep
 from params import Vocabulary
 from ZeusKnows.docs import get_docs
 from ZeusKnows import vocabulary
+import requests
 
 app = bottle.Bottle()
 query_question, query_docs = None, None
 response = ""
+question_id = None
 
 @app.get("/")
 def home():
@@ -25,23 +27,29 @@ def home():
         return html
 
 @app.get('/answer')
-def answer():
-    global query_question, query_docs, response
-    query_question, query_docs = request.query.question, get_docs(request.query.question)
-
-    while not response:
+def answer():    
+    global query_question, query_docs, response, question_id
+    query_question, query_docs, question_id = request.query.question, get_docs(request.query.question), request.query.question_id
+    
+    """while not response:
         sleep(0.1)
     print("received response: {}".format(response))
-    Final_response = {"answer": response}
+    Final_response = {"answer": "".join(response), "passages": []}
     response = []
-    return Final_response
+    return Final_response"""
+    return {"msg": "ok"}
+    
+def post_answer():
+    global response, question_id
+    requests.post("http://0.0.0.0:8080/api/qa/answer/"+question_id, data=json.dumps({"answer": "".join(response), "passages": []}))
+
 
 class Demo(object):
     def __init__(self, model):
         run_event = threading.Event()
         run_event.set()
         threading.Thread(target=self.demo_backend, args = [model, run_event]).start()
-        app.run(port=8080, host='0.0.0.0')
+        app.run(port=8081, host='0.0.0.0')
         try:
             while 1:
                 sleep(.1)
@@ -69,7 +77,7 @@ class Demo(object):
                         if ids[0] == ids[1]:
                             ids[1] += 1
                         response = list(jieba.cut(query_docs[0].passage))[ids[0]:ids[1]]
-                        
+                        post_answer()
                         # response = " ".join(passage_t[ids[0]:ids[1]])
                         query_question = ""     # clear the question
 
