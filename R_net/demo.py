@@ -10,14 +10,13 @@ import threading
 from params import Params
 #from process import *
 from time import sleep
-from params import Vocabulary
+from .params import Vocabulary
 from ZeusKnows.docs import get_docs
 from ZeusKnows import vocabulary
 import requests
 
 app = bottle.Bottle()
 query_question, query_docs = None, None
-response = ""
 question_id = None
 
 @app.get("/")
@@ -83,7 +82,7 @@ class Demo(object):
 
 import jieba
 import numpy as np
-from data_load import ljz_load_data
+from .data_load import ljz_load_data
 def realtime_process(question, docs):
     datas = []
     question_w_ids = [vocabulary.getVocabID(voca) for voca in list(jieba.cut(question))]

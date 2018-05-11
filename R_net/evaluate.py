@@ -7,8 +7,8 @@ import argparse
 import json
 import sys
 
-from bleu_metric.bleu import Bleu
-from rouge_metric.rouge import Rouge
+from .bleu_metric.bleu import Bleu
+from .rouge_metric.rouge import Rouge
 
 def f1_and_EM_bleu_rouge(index, ground_truth, passage, dict_):
     if index[0] == index[1]:

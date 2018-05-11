@@ -3,24 +3,25 @@
     docs.py is used to machine computer comprehension,
     when user upload a question, we need to get related documents.
 """
-from __future__ import print_function
+
 import requests
 from bs4 import BeautifulSoup
 import sys
-reload(sys)
-sys.setdefaultencoding('utf-8')
+if sys.version[0] == '2':
+    reload(sys)
+    sys.setdefaultencoding('utf-8')
 
 import threading
-import Queue
+import queue
 
-docs = Queue.Queue()    # threading safety
+docs = queue.Queue()    # threading safety
 class Document:
     def __init__(self, *data):
         self.link, self.title, self.passage = data
 
 class Downloader(object):
     def __init__(self, keyword):
-        self.docs = Queue.Queue()
+        self.docs = queue.Queue()
         self.url = self.synthesis_url(keyword)        
     
     def start(self):
@@ -61,7 +62,8 @@ class Zhidao_Downloader(Downloader):
         docs.put(Document(url, item_soup.find(attrs={"class":"ask-title"}).text, best_answer.text))
 
 def get_html_content_soup(url):
-    return BeautifulSoup(unicode(requests.get(url).content, "gb2312", "ignore"), "html5lib")   # 忽略非gb2312的编码(ignore)
+    # if python2 str => unicode
+    return BeautifulSoup(str(requests.get(url).content, "gb2312", "ignore"), "html5lib")   # 忽略非gb2312的编码(ignore)
 
 
 """

@@ -6,8 +6,8 @@ import numpy as np
 
 from tensorflow.contrib.rnn import MultiRNNCell
 from tensorflow.contrib.rnn import RNNCell
-from params import Params
-from zoneout import ZoneoutWrapper
+from .params import Params
+from .zoneout import ZoneoutWrapper
 '''
 attention weights from https://www.microsoft.com/en-us/research/wp-content/uploads/2017/05/r-net.pdf
 W_u^Q.shape:    (2 * attn_size, attn_size)

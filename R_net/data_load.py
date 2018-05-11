@@ -6,7 +6,7 @@ import threading
 
 from tensorflow.python.platform import tf_logging as logging
 
-from params import Params
+from .params import Params
 import numpy as np
 import tensorflow as tf
 #from process import *

@@ -3,16 +3,19 @@
 from __future__ import print_function
 
 import sys  
-reload(sys)  
-sys.setdefaultencoding('utf8')   
+if sys.version[0] == '2':
+    reload(sys)
+    sys.setdefaultencoding('utf8')   
 
+import os
+base_path = os.path.dirname(os.path.realpath(__file__))   
 class Params():
 
     # data
     data_size = -1 # -1 to use all data
     num_epochs = 3
     train_prop = 0.9 # Not implemented atm
-    data_dir = "../"
+    data_dir = base_path + "/../"
     
     tp = "search"
     train_dir = data_dir + "{}.train.net.json".format(tp)
@@ -21,7 +24,7 @@ class Params():
     #train_dir = data_dir + "entity_id_train.stat"
     #dev_dir = data_dir + "entity_id_dev.stat"
     #logdir = "./train/train"
-    logdir = "./train/{}".format(tp)
+    logdir = base_path + "/train/{}".format(tp)
     outputdir = "../res/{}.res".format(tp)
     logdir_rank = "./rank/train"
     glove_dir = "./glove.840B.300d.txt" # Glove file name (If you want to use your own glove, replace the file name here)
@@ -77,8 +80,8 @@ import json
 class Vocabulary:
     def __init__(self):
         self.vocab_dict, self.char_dict = {}, {}
-        self.load_vocab_dict("../vocab.dict")
-        self.load_char_dict("../char.dict")
+        self.load_vocab_dict(base_path + "/../vocab.dict")
+        self.load_char_dict(base_path + "/../char.dict")
         print("vocab_dict size is ", len(self.vocab_dict))
         print("char_dict size is ", len(self.char_dict))
 

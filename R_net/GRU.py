@@ -18,8 +18,8 @@ from tensorflow.python.ops import nn_ops
 from tensorflow.python.ops import variable_scope as vs
 from tensorflow.python.util import nest
 from tensorflow.contrib.rnn import RNNCell
-from layers import gated_attention
-from params import Params
+from .layers import gated_attention
+from .params import Params
 
 _BIAS_VARIABLE_NAME = "bias"
 _WEIGHTS_VARIABLE_NAME = "kernel"

@@ -5,20 +5,21 @@ from __future__ import print_function
 
 import tensorflow as tf
 from tqdm import tqdm
-from data_load import get_batch, get_dev
-from params import Params
-from layers import *
-from GRU import gated_attention_Wrapper, GRUCell, SRUCell
-from evaluate import *
+from .data_load import get_batch, get_dev
+from .params import Params
+from .layers import *
+from .GRU import gated_attention_Wrapper, GRUCell, SRUCell
+from .evaluate import *
 import numpy as np
-import cPickle as pickle
+#import cPickle as pickle
 #from process import *
-from demo import Demo
+from .demo import Demo
 import os
 
 import sys  
-reload(sys)
-sys.setdefaultencoding('utf8')   
+if sys.version[0] == '2':
+    reload(sys)
+    sys.setdefaultencoding('utf8')   
 
 optimizer_factory = {"adadelta":tf.train.AdadeltaOptimizer,
             "adam":tf.train.AdamOptimizer,
