@@ -1,4 +1,4 @@
-from rouge_metric.rouge import Rouge
+from R_net.rouge_metric.rouge import Rouge
 
 import logging
 logger = logging.getLogger("synethsis answer")

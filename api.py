@@ -68,7 +68,7 @@ class R_net_Answer:
         return response
 
 
-r_net_answer = R_net_Answer(Model(is_training = False, demo = True))
+#r_net_answer = R_net_Answer(Model(is_training = False, demo = True))
 
 app = bottle.Bottle()
 @app.get('/answer')
@@ -80,12 +80,40 @@ def answer():
     #query_question, query_docs, question_id = request.query.question, get_docs(request.query.question), request.query.question_id
     return {"msg": "ok"}
 
+import os, logging
+import pickle
+from DuReader.tensorflow.dataset import BRCDataset
+from DuReader.tensorflow.rc_model import RCModel
+from DuReader.tensorflow.run import build_graph, parse_args
+from __init__ import logger
+
+def predict():
+    args = parse_args()
+    rc_model, vocab = build_graph(args)
+
+    data = []
+    for i, doc in enumerate(get_docs("浦发银行电话号码")):
+        data.append({
+            "documents": [{ "segmented_paragraphs": [list(jieba.cut(doc.passage))]}],
+            "segmented_question": list(jieba.cut("浦发银行电话号码")),
+            "question_id": 221574,
+            "passage_id": i,
+        })
+    brc_data = BRCDataset(args.max_p_num, args.max_p_len, args.max_q_len,
+                          test_files=[data])
+    brc_data.convert_to_ids(vocab)
+
+    test_batches = brc_data.gen_mini_batches('test', args.batch_size,
+                                             pad_id=vocab.get_id(vocab.pad_token), shuffle=False)
+    print(rc_model.evaluate(test_batches, save=False))
+
 
 if __name__ == "__main__":
 
-    print("Built model")
-    print(Params.logdir)
-    app.run(port=8081, host='0.0.0.0')
+    #print("Built model")
+    #print(Params.logdir)
+    #app.run(port=8081, host='0.0.0.0')
     
-    r_net_answer.get_answer("浦发银行电话号码")
+    #r_net_answer.get_answer("浦发银行电话号码")
     #demo_run = Demo(model)
+    predict()
