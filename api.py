@@ -1,9 +1,8 @@
 """
 The question receptor and answer generator.
 """
-import bottle, requests
-from bottle import route, run, request
-import jieba
+import json, threading
+import jieba, requests
 import numpy as np
 import tensorflow as tf
 
@@ -29,7 +28,6 @@ def realtime_process(question, docs):
         })
         
     return ljz_load_data(datas, file=False)
-
 
 from R_net.model import Model
 from R_net.params import Params, Vocabulary
@@ -95,7 +93,30 @@ class BIDAF_Answer:
                                              pad_id=self.vocab.get_id(self.vocab.pad_token), shuffle=False)
         return self.rc_model.evaluate(test_batches, save=False)
 
-#bidaf_answer = BIDAF_Answer()
+bidaf_answer = BIDAF_Answer()
+
+import bottle
+from bottle import route, run, request
+app = bottle.Bottle()
+
+@app.get("/answer")
+def regeiste_answer():
+    """
+    Test Server status and start construct answer.
+    Required:
+        1. question
+        2. question ID
+    """
+    t = threading.Thread(target=api_ensemble, args=(request.query.question, request.query.question_id))
+    t.start()
+    return {"msg": "ok"}
+
+def api_ensemble(question, question_id):
+    docs = get_docs(question)
+    anss = bidaf_answer.get_answer(question, question_id, docs) + r_net_answer.get_answer(question, question_id, docs)
+    answer = ensemble_answer(question, *[ans["answers"] for ans in anss])
+    requests.post("http://0.0.0.0:8080/api/qa/answer/"+question_id, data=json.dumps({"answer": answer, "passages": []}))
+    
 
 if __name__ == "__main__":
 
@@ -106,7 +127,8 @@ if __name__ == "__main__":
     #print(r_net_answer.get_answer("浦发银行电话号码", "23-5", get_docs("浦发银行电话号码")))
     #demo_run = Demo(model)
     #bidaf_answer.get_answer("浦发银行电话号码", get_docs("浦发银行电话号码"))
-    question = "浦发银行电话号码"
-    docs = get_docs(question)
-    anss = r_net_answer.get_answer(question, "235-a", docs)
-    print(ensemble_answer(question, *[ans["answers"] for ans in anss]))
+    #question = "浦发银行电话号码"
+    #docs = get_docs(question)
+    #anss = r_net_answer.get_answer(question, "235-a", docs)
+    #print(ensemble_answer(question, *[ans["answers"] for ans in anss]))
+    app.run(port=8081, host='0.0.0.0')
