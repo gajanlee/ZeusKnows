@@ -21,8 +21,4 @@ class Params:
     char_dict_size = 8136
 
     # -----> Generate Question-Answer Data Format Configuration
-
-
     struct_file = "./upload_res.json"
-
-    

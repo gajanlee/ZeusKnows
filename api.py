@@ -7,12 +7,9 @@ import jieba
 import numpy as np
 import tensorflow as tf
 
-from R_net.model import Model
-from R_net.params import Params, Vocabulary
-from R_net.data_load import ljz_load_data
-
 from docs import get_docs
-from __init__ import vocabulary
+from vote import ensemble_answer
+from __init__ import vocabulary, logger
 
 def realtime_process(question, docs):
     datas = []
@@ -20,9 +17,8 @@ def realtime_process(question, docs):
     question_c_ids = [[vocabulary.getCharID(char) for char in voca] for voca in list(jieba.cut(question))]
     for i, doc in enumerate(docs):
         if i == Params.batch_size: break    # the count is satisfied batch size
-        passage = doc.passage
+        passage = doc.passage[:Params.max_p_len]
         tokens = list(jieba.cut(passage))
-        print(doc.passage)        
         datas.append({
             "segmented_question": question_w_ids,
             "segmented_paragraph": [vocabulary.getVocabID(voca) for voca in tokens],
@@ -31,12 +27,15 @@ def realtime_process(question, docs):
             "question_id": 0,   # Later, will transfer from client
             "passage_id": i,
         })
-    return ljz_load_data(datas[:1], file=False)
+        
+    return ljz_load_data(datas, file=False)
 
 
+from R_net.model import Model
+from R_net.params import Params, Vocabulary
+from R_net.data_load import ljz_load_data
 class R_net_Answer:
     def __init__(self, model):
-        
         with model.graph.as_default():
             sv = tf.train.Supervisor()
             sess = tf.Session()
@@ -45,68 +44,58 @@ class R_net_Answer:
             self._dict = Vocabulary()
             self.model = model
             self.sess  = sess
-            
         """
         model.graph.as_default()
         sv = tf.train.Supervisor()
         sess = sv.managed_session()
         sv.saver.restore(sess, tf.train.latest_checkpoint(Params.logdir))"""
         
-
-    
-    def get_answer(self, question):
-        query_docs = get_docs(question)
+    def get_answer(self, question, question_id, query_docs):
+        """
+        :question :A string of question.
+        :query_docs :A list of Document instances.
+        """
         data, shapes = realtime_process(question, query_docs)
         fd = {m:d for i,(m,d) in enumerate(zip(self.model.data, data))}
         ids = self.sess.run([self.model.output_index], feed_dict = fd)
-        print(ids)
-        ids = ids[0][0]
-        if ids[0] == ids[1]:
-            ids[1] += 1
-        return list(jieba.cut(query_docs[0].passage))[ids[0]:ids[1]]
-        #post_answer()
-        return response
+        res = []
+        for i, (id, doc) in enumerate(zip(ids[0], query_docs)):
+            if id[0] == id[1]: id[1] += 1
+            res.append({
+                "question_id": question_id,
+                "answers": "".join(list(jieba.cut(doc.passage))[id[0]:id[1]]),
+                "passage_id": i,
+            })
+        return res
 
-
-#r_net_answer = R_net_Answer(Model(is_training = False, demo = True))
-
-app = bottle.Bottle()
-@app.get('/answer')
-def answer():
-    question, question_id = request.question, request.question_id
-    response = r_net_answer.get_answer(question)
-    return {"answer": "".join(response), "passages": []}    
-    #global query_question, query_docs, response, question_id
-    #query_question, query_docs, question_id = request.query.question, get_docs(request.query.question), request.query.question_id
-    return {"msg": "ok"}
+r_net_answer = R_net_Answer(Model(is_training = False, demo = True))
 
 import os, logging
 import pickle
 from DuReader.tensorflow.dataset import BRCDataset
 from DuReader.tensorflow.rc_model import RCModel
 from DuReader.tensorflow.run import build_graph, parse_args
-from __init__ import logger
 
-def predict():
-    args = parse_args()
-    rc_model, vocab = build_graph(args)
-
-    data = []
-    for i, doc in enumerate(get_docs("浦发银行电话号码")):
-        data.append({
+class BIDAF_Answer:
+    def __init__(self):
+        self.args = parse_args()
+        self.rc_model, self.vocab = build_graph(self.args)
+        
+    def get_answer(self, question, question_id, docs):
+        data = [{
             "documents": [{ "segmented_paragraphs": [list(jieba.cut(doc.passage))]}],
-            "segmented_question": list(jieba.cut("浦发银行电话号码")),
-            "question_id": 221574,
+            "segmented_question": list(jieba.cut(question)),
+            "question_id": question_id,
             "passage_id": i,
-        })
-    brc_data = BRCDataset(args.max_p_num, args.max_p_len, args.max_q_len,
+        } for i, doc in enumerate(docs)]
+        brc_data = BRCDataset(self.args.max_p_num, self.args.max_p_len, self.args.max_q_len,
                           test_files=[data])
-    brc_data.convert_to_ids(vocab)
+        brc_data.convert_to_ids(self.vocab)
+        test_batches = brc_data.gen_mini_batches('test', self.args.batch_size,
+                                             pad_id=self.vocab.get_id(self.vocab.pad_token), shuffle=False)
+        return self.rc_model.evaluate(test_batches, save=False)
 
-    test_batches = brc_data.gen_mini_batches('test', args.batch_size,
-                                             pad_id=vocab.get_id(vocab.pad_token), shuffle=False)
-    print(rc_model.evaluate(test_batches, save=False))
-
+#bidaf_answer = BIDAF_Answer()
 
 if __name__ == "__main__":
 
@@ -114,6 +103,10 @@ if __name__ == "__main__":
     #print(Params.logdir)
     #app.run(port=8081, host='0.0.0.0')
     
-    #r_net_answer.get_answer("浦发银行电话号码")
+    #print(r_net_answer.get_answer("浦发银行电话号码", "23-5", get_docs("浦发银行电话号码")))
     #demo_run = Demo(model)
-    predict()
+    #bidaf_answer.get_answer("浦发银行电话号码", get_docs("浦发银行电话号码"))
+    question = "浦发银行电话号码"
+    docs = get_docs(question)
+    anss = r_net_answer.get_answer(question, "235-a", docs)
+    print(ensemble_answer(question, *[ans["answers"] for ans in anss]))

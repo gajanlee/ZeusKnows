@@ -265,7 +265,7 @@ def ljz_load_data(_file, file=True):
     ids = []    # question's id
 
     max_plen, max_qlen, max_clen = Params.max_p_len, Params.max_q_len, Params.max_char_len
-    print("loading data dir is ", _file)
+    #print("loading data dir is ", _file)
 
     if file == True:
         fp = open(_file)
@@ -307,28 +307,28 @@ def ljz_load_data(_file, file=True):
             indices.append([d["answer_spans"][0][0], d["answer_spans"][0][1]+1])
             tags.append([0])
             ids.append([0,0])
-        #ids.append([d["question_id"], d["passage_id"]])
-        #ids.append([0, 0])
-        # to numpy
+    #ids.append([d["question_id"], d["passage_id"]])
+    #ids.append([0, 0])
+    # to numpy
         
         
-        indices = np.reshape(np.asarray(indices,np.int32),(-1,2))
-        tags = np.reshape(np.asarray(tags, np.float32), (-1, 1))
-        ids = np.reshape(np.asarray(ids, np.int32), (-1, 2))
-        passage_word_len = np.reshape(np.asarray(passage_word_len, np.int32),(-1,1))
-        question_word_len = np.reshape(np.asarray(question_word_len, np.int32),(-1,1))
-        # p_char_len = pad_data(p_char_len,p_max_word)
-        # q_char_len = pad_data(q_char_len,q_max_word)
-        p_char_len = padding_char_len(passage_char_len, max_plen)
-        q_char_len = padding_char_len(question_char_len, max_qlen)
-        # shapes of each data
-        shapes=[(max_plen,),(max_qlen,),
-                (max_plen, max_clen,),(max_qlen,max_clen,),
-                (1,),(1,),
-                (max_plen,),(max_qlen,),
-                (2,), (1,), (2,)]
+    indices = np.reshape(np.asarray(indices,np.int32),(-1,2))
+    tags = np.reshape(np.asarray(tags, np.float32), (-1, 1))
+    ids = np.reshape(np.asarray(ids, np.int32), (-1, 2))
+    passage_word_len = np.reshape(np.asarray(passage_word_len, np.int32),(-1,1))
+    question_word_len = np.reshape(np.asarray(question_word_len, np.int32),(-1,1))
+    # p_char_len = pad_data(p_char_len,p_max_word)
+    # q_char_len = pad_data(q_char_len,q_max_word)
+    p_char_len = padding_char_len(passage_char_len, max_plen)
+    q_char_len = padding_char_len(question_char_len, max_qlen)
+    # shapes of each data
+    shapes=[(max_plen,),(max_qlen,),
+            (max_plen, max_clen,),(max_qlen,max_clen,),
+            (1,),(1,),
+            (max_plen,),(max_qlen,),
+            (2,), (1,), (2,)]
        
-        return ([np.array(passage_word_ids), np.array(question_word_ids),
+    return ([np.array(passage_word_ids), np.array(question_word_ids),
                 np.array(passage_char_ids), np.array(question_char_ids),
                 passage_word_len, question_word_len,
                 np.array(p_char_len), np.array(q_char_len),

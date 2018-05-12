@@ -7,9 +7,7 @@
 import requests
 from bs4 import BeautifulSoup
 import sys
-if sys.version[0] == '2':
-    reload(sys)
-    sys.setdefaultencoding('utf-8')
+from utils import replace_invisible
 
 import threading
 import queue
@@ -18,6 +16,7 @@ docs = queue.Queue()    # threading safety
 class Document:
     def __init__(self, *data):
         self.link, self.title, self.passage = data
+        self.passage = replace_invisible(self.passage)
 
 class Downloader(object):
     def __init__(self, keyword):
