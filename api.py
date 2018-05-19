@@ -26,7 +26,15 @@ def realtime_process(question, docs):
             "question_id": 0,   # Later, will transfer from client
             "passage_id": i,
         })
-        
+    while len(datas) < Params.batch_size:
+        datas.append({
+            "segmented_question": [],
+            "segmented_paragraph": [],
+            "char_question": [[]],
+            "char_paragraph": [[]],
+            "question_id": 0,   # Later, will transfer from client
+            "passage_id": -1,
+        })        
     return ljz_load_data(datas, file=False)
 
 from R_net.model import Model
@@ -42,22 +50,19 @@ class R_net_Answer:
             self._dict = Vocabulary()
             self.model = model
             self.sess  = sess
-        """
-        model.graph.as_default()
-        sv = tf.train.Supervisor()
-        sess = sv.managed_session()
-        sv.saver.restore(sess, tf.train.latest_checkpoint(Params.logdir))"""
         
     def get_answer(self, question, question_id, query_docs):
         """
         :question :A string of question.
         :query_docs :A list of Document instances.
         """
-        data, shapes = realtime_process(question, query_docs)
+        data, _ = realtime_process(question, query_docs)
         fd = {m:d for i,(m,d) in enumerate(zip(self.model.data, data))}
-        ids = self.sess.run([self.model.output_index], feed_dict = fd)
+        ids, pids = self.sess.run([self.model.output_index, self.model.ids], feed_dict = fd)
         res = []
-        for i, (id, doc) in enumerate(zip(ids[0], query_docs)):
+        for i, (id, doc, pid) in enumerate(zip(ids, query_docs, pids)):
+            print(pids)
+            if pid[1] == -1: continue
             if id[0] == id[1]: id[1] += 1
             res.append({
                 "question_id": question_id,
@@ -107,6 +112,7 @@ def regeiste_answer():
         1. question
         2. question ID
     """
+    print(request.query.question)
     t = threading.Thread(target=api_ensemble, args=(request.query.question, request.query.question_id))
     t.start()
     return {"msg": "ok"}

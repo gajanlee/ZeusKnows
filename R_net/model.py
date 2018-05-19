@@ -90,6 +90,12 @@ class Model(object):
                                         [Params.batch_size, Params.max_p_len],"passage_c_len")
                 self.question_c_len = tf.placeholder(tf.int32,
                                         [Params.batch_size, Params.max_q_len],"question_c_len")
+                self.indices = tf.placeholder(tf.int32,
+                                        [Params.batch_size, 2],"question_c_len")
+                self.tags = tf.placeholder(tf.float32,
+                                        [Params.batch_size, 1],"question_c_len")
+                self.ids = tf.placeholder(tf.int32,
+                                        [Params.batch_size, 2],"question_c_len")
                 self.data = (self.passage_w,
                             self.question_w,
                             self.passage_c,
@@ -97,7 +103,10 @@ class Model(object):
                             self.passage_w_len_,
                             self.question_w_len_,
                             self.passage_c_len,
-                            self.question_c_len)
+                            self.question_c_len,
+                            self.indices,
+                            self.tags,
+                            self.ids)
             else:
                 self.data, self.num_batch = get_batch(is_training = is_training)
                 (self.passage_w,

@@ -7,3 +7,4 @@ bottle
 requests
 bs4
 jieba
+pandas==0.19.2  # adapt the tensorflow version
