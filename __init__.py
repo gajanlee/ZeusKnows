@@ -2,11 +2,12 @@
 
 Init File, used to load vocab and id pairs.
 """
-import re, os
+import re, os, sys
 import json
 from params import Params
 import logging
 
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 logger = logging.getLogger("vocab_logger")
 logging.basicConfig(level = logging.DEBUG, 
                     format = "%(asctime)s : %(levelname)s  %(message)s",
