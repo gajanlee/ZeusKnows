@@ -73,18 +73,10 @@ def ensemble_answer(question, *ans):
         res.append((scr + score(si, question), si))
 
     res.sort(key=lambda x: x[0], reverse=True)
-    print(res)
-    return res[0][1]
-
     for r in res:
-        #print(r)
-        if r != "。":
-            if r[1][0] == "。":
-                print(r[1][0])
-                print(res)
-                r[1] = r[1][1:]
-            return r[1]
-    return res[0][1]
+        if res[1] != "。":
+            return res[1]
+    return "No Answer"
 
 if __name__ == "__main__":
     w = open("11result_tri_vote_2.json", "w")
