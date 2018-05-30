@@ -61,7 +61,7 @@ def del_juhao(s_list):
         res.append(s)
     return res
 
-def ensemble_answer(question, *ans):
+def ensemble_answer(question, docs, *ans):
     """
     ans, a list of Answer
     """
@@ -69,14 +69,14 @@ def ensemble_answer(question, *ans):
     print(ans)
     res = []
     for i, si in enumerate(ans):
-        scr = sum([score(si, sj) for j, sj in enumerate(ans) if i != j])
-        res.append((scr + score(si, question), si))
-
-    res.sort(key=lambda x: x[0], reverse=True)
-    for r in res:
-        if res[1] != "。":
-            return res[1]
-    return "No Answer"
+        scr = sum([score(si["answers"], sj["answers"]) for j, sj in enumerate(ans) if i != j])
+        res.append((scr + score(si["answers"], question), si["answers"], docs[si["passage_id"]].passage))
+    
+    _res = list(filter(lambda x: x[1] != "。", res))
+    if not _res:
+        return "No Answer"
+    _res.sort(key=lambda x: x[0], reverse=True)
+    return _res
 
 if __name__ == "__main__":
     w = open("11result_tri_vote_2.json", "w")

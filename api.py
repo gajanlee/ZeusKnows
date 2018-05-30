@@ -120,8 +120,8 @@ def regeiste_answer():
 def api_ensemble(question, question_id):
     docs = get_docs(question)
     anss = bidaf_answer.get_answer(question, question_id, docs) + r_net_answer.get_answer(question, question_id, docs)
-    answer = ensemble_answer(question, *[ans["answers"] for ans in anss])
-    requests.post("http://0.0.0.0:8080/api/qa/answer/"+question_id, data=json.dumps({"answer": answer, "passages": []}))
+    answer = ensemble_answer(question, docs, *anss)
+    requests.post("http://0.0.0.0:8080/api/qa/answer/"+question_id, data=json.dumps({"answer": answer[0][1] if answer != "No Answer" else answer, "scores": [ans[0] for ans in answer] if answer != "No Answer" else [],  "answers": [ans[1] for ans in answer] if answer != "No Answer" else [],"passages": [ans[2] for ans in answer] if answer != "No Answer" else []}))
     
 
 if __name__ == "__main__":
