@@ -28,6 +28,8 @@ def replace_invisible(x):
 # 字符级别的分数判定
 rouge = Rouge()
 def score(s1, s2):
+    if not s1 or not s2:
+        return 0 
     return rouge.calc_score([s1], [s2])
 
 def entity(s1, s2, s3):
