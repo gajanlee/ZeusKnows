@@ -11,9 +11,6 @@ from .layers import *
 from .GRU import gated_attention_Wrapper, GRUCell, SRUCell
 from .evaluate import *
 import numpy as np
-#import cPickle as pickle
-#from process import *
-from .demo import Demo
 import os
 
 import sys  
@@ -472,9 +469,10 @@ if __name__ == '__main__':
         print("Testing on dev set...")
         test()
     elif Params.mode.lower() == "demo":
-        print("Run the local host for online demo...")
-        model = Model(is_training = False, demo = True); print("Built model")
-        demo_run = Demo(model)
+        """
+        Please see details in ../api.py
+        """
+        print("Please Run the api.py")
     elif Params.mode.lower() == "train":
         print("Training...")
         main()
